@@ -47,6 +47,12 @@ class JavaMemberModelTest {
         assertFalse(type.declaredMembers().stream()
                 .filter(member -> member.kind() == JavaMemberKind.FIELD)
                 .findFirst().orElseThrow().hasCode());
+        assertEquals(JvmPrimitiveType.INT, type.declaredMembers().stream()
+                .filter(member -> member.kind() == JavaMemberKind.FIELD)
+                .findFirst().orElseThrow().fieldType());
+        assertEquals(JvmVoidType.VOID, type.declaredMembers().stream()
+                .filter(member -> member.kind() == JavaMemberKind.METHOD)
+                .findFirst().orElseThrow().methodType().returnType());
     }
 
     @Test

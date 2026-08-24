@@ -76,6 +76,20 @@ public final class JavaMember implements Comparable<JavaMember> {
         return kind != JavaMemberKind.FIELD;
     }
 
+    public JvmType fieldType() {
+        if (kind != JavaMemberKind.FIELD) {
+            throw new IllegalStateException("Only fields have a field type");
+        }
+        return JvmDescriptors.parseField(descriptor());
+    }
+
+    public JvmMethodType methodType() {
+        if (!isCodeUnit()) {
+            throw new IllegalStateException("Fields do not have a method type");
+        }
+        return JvmDescriptors.parseMethod(descriptor());
+    }
+
     @Override
     public int compareTo(JavaMember other) {
         return signature.compareTo(other.signature);

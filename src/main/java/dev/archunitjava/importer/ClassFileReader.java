@@ -82,6 +82,8 @@ public final class ClassFileReader {
                     resource.name(),
                     resource.origin(),
                     resource.precedence(),
+                    header.superclassBinaryName(),
+                    header.interfaceBinaryNames(),
                     header.sourceFile(),
                     header.declaredMembers()));
         } catch (RuntimeException failure) {

@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.Optional;
 
 /** Immutable top-level Java type description backed only by library-owned values. */
 public final class JavaType implements Comparable<JavaType> {
@@ -20,6 +21,8 @@ public final class JavaType implements Comparable<JavaType> {
     private final int precedence;
     private final List<JavaMember> declaredMembers;
     private final DeclarationLocation location;
+    private final Optional<JvmReferenceType> superclass;
+    private final List<JvmReferenceType> directInterfaces;
 
     JavaType(
             JavaTypeName name,
@@ -31,6 +34,8 @@ public final class JavaType implements Comparable<JavaType> {
             String resourceName,
             int precedence,
             DeclarationLocation location,
+            Optional<JvmReferenceType> superclass,
+            List<JvmReferenceType> directInterfaces,
             List<JavaMember> declaredMembers) {
         this.name = Objects.requireNonNull(name, "name");
         this.owner = new TypeOwner(name.packageName());
@@ -50,6 +55,13 @@ public final class JavaType implements Comparable<JavaType> {
         if (precedence < 0) throw new IllegalArgumentException("precedence must not be negative");
         this.precedence = precedence;
         this.location = Objects.requireNonNull(location, "location");
+        this.superclass = Objects.requireNonNull(superclass, "superclass");
+        Objects.requireNonNull(directInterfaces, "directInterfaces");
+        TreeSet<String> seenInterfaces = new TreeSet<>();
+        for (JvmReferenceType directInterface : directInterfaces) {
+            seenInterfaces.add(Objects.requireNonNull(directInterface, "directInterface").binaryName());
+        }
+        this.directInterfaces = seenInterfaces.stream().map(JvmReferenceType::new).toList();
         Objects.requireNonNull(declaredMembers, "declaredMembers");
         TreeSet<JavaMember> sortedMembers = new TreeSet<>();
         for (JavaMember member : declaredMembers) {
@@ -117,6 +129,14 @@ public final class JavaType implements Comparable<JavaType> {
 
     public DeclarationLocation location() {
         return location;
+    }
+
+    public Optional<JvmReferenceType> superclass() {
+        return superclass;
+    }
+
+    public List<JvmReferenceType> directInterfaces() {
+        return directInterfaces;
     }
 
     @Override

@@ -14,6 +14,8 @@ public record ParsedClassFile(
         String resourceName,
         ClassFileOrigin origin,
         int precedence,
+        java.util.Optional<String> superclassBinaryName,
+        List<String> interfaceBinaryNames,
         java.util.Optional<String> sourceFile,
         List<ParsedMember> declaredMembers)
         implements Comparable<ParsedClassFile> {
@@ -29,6 +31,14 @@ public record ParsedClassFile(
         }
         Objects.requireNonNull(origin, "origin");
         if (precedence < 0) throw new IllegalArgumentException("precedence must not be negative");
+        Objects.requireNonNull(superclassBinaryName, "superclassBinaryName");
+        superclassBinaryName = superclassBinaryName.map(value -> requireBinaryName(value, "superclass"));
+        Objects.requireNonNull(interfaceBinaryNames, "interfaceBinaryNames");
+        TreeSet<String> sortedInterfaces = new TreeSet<>();
+        for (String interfaceName : interfaceBinaryNames) {
+            sortedInterfaces.add(requireBinaryName(interfaceName, "interface"));
+        }
+        interfaceBinaryNames = List.copyOf(sortedInterfaces);
         Objects.requireNonNull(sourceFile, "sourceFile");
         sourceFile = sourceFile.map(value -> {
             if (value.isBlank()) throw new IllegalArgumentException("sourceFile must not be blank");
@@ -61,7 +71,42 @@ public record ParsedClassFile(
                 origin,
                 precedence,
                 java.util.Optional.empty(),
+                List.of(),
+                java.util.Optional.empty(),
                 List.of());
+    }
+
+    public ParsedClassFile(
+            String binaryName,
+            int accessFlags,
+            int majorVersion,
+            int minorVersion,
+            boolean moduleDescriptor,
+            String resourceName,
+            ClassFileOrigin origin,
+            int precedence,
+            java.util.Optional<String> sourceFile,
+            List<ParsedMember> declaredMembers) {
+        this(
+                binaryName,
+                accessFlags,
+                majorVersion,
+                minorVersion,
+                moduleDescriptor,
+                resourceName,
+                origin,
+                precedence,
+                java.util.Optional.empty(),
+                List.of(),
+                sourceFile,
+                declaredMembers);
+    }
+
+    private static String requireBinaryName(String value, String role) {
+        if (value == null || value.isBlank() || value.indexOf('/') >= 0) {
+            throw new IllegalArgumentException(role + " binary name must not be blank or internal");
+        }
+        return value;
     }
 
     @Override

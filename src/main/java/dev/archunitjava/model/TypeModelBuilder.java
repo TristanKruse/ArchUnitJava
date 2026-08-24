@@ -65,9 +65,13 @@ public final class TypeModelBuilder {
         if (has(flags, ClassFile.ACC_ABSTRACT)) modifiers.add(JavaModifier.ABSTRACT);
         if (has(flags, ClassFile.ACC_FINAL)) modifiers.add(JavaModifier.FINAL);
         if (has(flags, ClassFile.ACC_SYNTHETIC)) modifiers.add(JavaModifier.SYNTHETIC);
+        JavaTypeKind typeKind = kind(flags);
+        var superclass = typeKind == JavaTypeKind.INTERFACE || typeKind == JavaTypeKind.ANNOTATION
+                ? java.util.Optional.<JvmReferenceType>empty()
+                : parsed.superclassBinaryName().map(JvmReferenceType::new);
         types.add(new JavaType(
                 name,
-                kind(flags),
+                typeKind,
                 modifiers,
                 flags,
                 flags & ~KNOWN_CLASS_FLAGS,
@@ -75,6 +79,8 @@ public final class TypeModelBuilder {
                 parsed.resourceName(),
                 parsed.precedence(),
                 location,
+                superclass,
+                parsed.interfaceBinaryNames().stream().map(JvmReferenceType::new).toList(),
                 members(name, parsed.declaredMembers(), location)));
     }
 

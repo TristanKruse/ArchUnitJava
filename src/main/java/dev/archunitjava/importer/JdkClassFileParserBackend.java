@@ -55,6 +55,11 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 model.majorVersion(),
                 model.minorVersion(),
                 model.isModuleInfo(),
+                model.superclass().map(entry -> entry.asInternalName().replace('/', '.')),
+                model.interfaces().stream()
+                        .map(entry -> entry.asInternalName().replace('/', '.'))
+                        .sorted()
+                        .toList(),
                 sourceFile,
                 List.copyOf(members));
     }

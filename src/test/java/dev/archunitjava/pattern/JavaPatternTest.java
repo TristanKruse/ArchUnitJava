@@ -23,6 +23,7 @@ final class JavaPatternTest {
         assertTrue(onePathSegment.matches("classes/example/Api.class"));
         assertFalse(onePathSegment.matches("classes/example/internal/Api.class"));
         assertTrue(anyPathDepth.matches("classes/example/internal/Api.class"));
+        assertTrue(anyPathDepth.matches("classes/example\ninternal/Api.class"));
     }
 
     @Test

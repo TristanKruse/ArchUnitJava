@@ -91,7 +91,7 @@ public final class JavaPattern {
             } else if (codePoint == '*') {
                 if (offset < expression.length() && expression.codePointAt(offset) == '*') {
                     offset += Character.charCount('*');
-                    regex.append(".*");
+                    regex.append("[\\s\\S]*");
                 } else {
                     regex.append("[^").append(separator).append("]*");
                 }

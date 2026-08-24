@@ -3,7 +3,7 @@ package dev.archunitjava.execution;
 import java.util.Map;
 
 /** Invalid user input or API usage that can be corrected without changing the analyzer. */
-public final class UserError extends ExecutionError {
+public non-sealed class UserError extends ExecutionError {
     public UserError(String code, String message) {
         this(code, message, null, Map.of());
     }

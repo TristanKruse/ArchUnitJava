@@ -70,6 +70,9 @@ final class ExecutionContractTest {
                 "pattern.invalid", "Fix the supplied pattern", cause, Map.of("pattern", "["));
         assertSame(cause, user.getCause());
         assertEquals("[", user.context().get("pattern"));
+
+        UserError specialized = new SpecializedUserError("Use a qualified name");
+        assertEquals("name.invalid", specialized.code());
     }
 
     @Test
@@ -81,4 +84,10 @@ final class ExecutionContractTest {
     }
 
     private record RuleFailureValue(String code) {}
+
+    private static final class SpecializedUserError extends UserError {
+        private SpecializedUserError(String message) {
+            super("name.invalid", message);
+        }
+    }
 }

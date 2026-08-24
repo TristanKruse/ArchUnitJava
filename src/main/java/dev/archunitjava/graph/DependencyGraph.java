@@ -31,23 +31,22 @@ public final class DependencyGraph {
 
     public static final class Builder {
         private final Map<String, StableId> nodes = new TreeMap<>();
+        private final Map<String, StableId> identities = new TreeMap<>();
         private final Map<EdgeKey, Set<DependencyEvidence>> dependencies = new TreeMap<>();
 
         public Builder addNode(StableId id) {
-            Objects.requireNonNull(id, "id");
-            StableId previous = nodes.putIfAbsent(id.stableKey(), id);
-            if (previous != null && !previous.equals(id)) {
-                throw new IllegalArgumentException("Stable key collision: " + id.stableKey());
-            }
+            registerIdentity(Objects.requireNonNull(id, "id"));
+            nodes.putIfAbsent(id.stableKey(), id);
             return this;
         }
 
         public Builder addDependency(StableId origin, StableId target, DependencyKind kind,
                 DependencyEvidence evidence) {
-            EdgeKey key = new EdgeKey(Objects.requireNonNull(origin), Objects.requireNonNull(target),
-                    Objects.requireNonNull(kind));
+            registerIdentity(Objects.requireNonNull(origin, "origin"));
+            registerIdentity(Objects.requireNonNull(target, "target"));
+            EdgeKey key = new EdgeKey(origin, target, Objects.requireNonNull(kind, "kind"));
             dependencies.computeIfAbsent(key, ignored -> new TreeSet<>())
-                    .add(Objects.requireNonNull(evidence));
+                    .add(Objects.requireNonNull(evidence, "evidence"));
             return this;
         }
 
@@ -64,8 +63,20 @@ public final class DependencyGraph {
         }
 
         private void requireKnown(StableId id) {
-            if (!nodes.containsKey(id.stableKey())) {
+            StableId known = nodes.get(id.stableKey());
+            if (known == null || !known.equals(id)) {
                 throw new GraphValidationException("Unknown graph endpoint: " + id.stableKey());
+            }
+        }
+
+        private void registerIdentity(StableId id) {
+            String stableKey = Objects.requireNonNull(id.stableKey(), "stableKey");
+            if (stableKey.isBlank()) {
+                throw new IllegalArgumentException("Stable key must not be blank");
+            }
+            StableId previous = identities.putIfAbsent(stableKey, id);
+            if (previous != null && !previous.equals(id)) {
+                throw new IllegalArgumentException("Stable key collision: " + stableKey);
             }
         }
     }

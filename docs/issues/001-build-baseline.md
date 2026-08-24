@@ -1,12 +1,12 @@
 ## Outcome
 
-Establish the smallest cross-platform build that compiles, tests, and packages the clean-room scaffold reproducibly.
+Establish the smallest cross-platform build that compiles, tests, and packages the initial ArchUnitJava project reproducibly.
 
 ## Acceptance criteria
 
 - The Maven Wrapper is pinned with checksum verification and works on Windows and Linux.
 - JDK and Maven versions are enforced and JUnit runs the smoke contract.
-- CI verifies the untouched scaffold without publishing artifacts.
+- CI verifies the initial project without publishing artifacts.
 
 ## Non-goals
 

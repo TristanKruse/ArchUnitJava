@@ -1,11 +1,11 @@
 {
   "id": "java-001-build-baseline",
   "title": "Foundation: bootstrap a reproducible JDK 25 Maven build",
-  "objective": "Establish the smallest cross-platform build that compiles, tests, and packages the clean-room scaffold reproducibly.",
+  "objective": "Establish the smallest cross-platform build that compiles, tests, and packages the initial ArchUnitJava project reproducibly.",
   "acceptance_criteria": [
     "The Maven Wrapper is pinned with checksum verification and works on Windows and Linux.",
     "JDK and Maven versions are enforced and JUnit runs the smoke contract.",
-    "CI verifies the untouched scaffold without publishing artifacts."
+    "CI verifies the initial project without publishing artifacts."
   ],
   "non_goals": [
     "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",

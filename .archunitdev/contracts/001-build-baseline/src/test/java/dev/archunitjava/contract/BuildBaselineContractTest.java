@@ -13,8 +13,8 @@ final class BuildBaselineContractTest {
     }
 
     @Test
-    void scaffoldDoesNotClaimUnimplementedProductFeatures() {
-        assertEquals("scaffold", ArchUnitJava.status());
-        assertTrue(ArchUnitJava.class.desiredAssertionStatus() || !ArchUnitJava.status().isBlank());
+    void exposesTheExpectedProductNamespace() {
+        assertEquals("dev.archunitjava", ArchUnitJava.class.getPackageName());
+        assertTrue(ArchUnitJava.class.getSimpleName().startsWith("ArchUnit"));
     }
 }

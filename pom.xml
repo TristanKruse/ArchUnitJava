@@ -7,8 +7,8 @@
   <groupId>dev.archunitjava</groupId>
   <artifactId>archunitjava</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>ArchUnitJava Codex proving repository</name>
-  <description>Private clean-room architecture-testing workflow experiment for Java</description>
+  <name>ArchUnitJava</name>
+  <description>Architecture testing for Java</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -78,4 +78,3 @@
     </plugins>
   </build>
 </project>
-

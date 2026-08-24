@@ -2,10 +2,10 @@
 
 ## Product framing
 
-Java already has the mature original ArchUnit. This repository is therefore a
-private workflow experiment and clean-room design exercise, not a claim that
-Java lacks an architecture-testing library. The benchmark is conceptual
-coverage and engineering quality, not compatibility by imitation.
+Java already has the mature original ArchUnit. ArchUnitJava is an independent
+Java member of the ArchUnitEverything family, not a claim that Java lacks an
+architecture-testing library. The benchmark is useful conceptual coverage and
+engineering quality, not compatibility by imitation.
 
 ## What transfers from the sibling libraries
 
@@ -22,12 +22,11 @@ clean-architecture presets, cumulative metrics, a CLI, and CI-oriented result
 formats. TypeScript also demonstrates why path aliases, barrel/public entry
 points, cache semantics, and report filtering need explicit contracts.
 
-The Rust proving backlog contributes workflow lessons: granular task contracts,
-allowed and protected paths, dependency readiness, extraction corpora,
-adversarial inputs, deterministic exports, baselines, and a release decision
-based on evidence. Only its first GitHub product issue was completed; the local
-60-issue expansion remains unfinished and is not evidence of implemented Rust
-features.
+The Rust backlog contributes planning lessons: granular scope, dependency
+readiness, extraction corpora, adversarial inputs, deterministic exports,
+baselines, and a release decision based on evidence. Only its first GitHub
+product issue was completed; its expanded plan is not evidence of implemented
+Rust features.
 
 ## What is genuinely Java-specific
 
@@ -77,4 +76,3 @@ Gradle builds.
   https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/module/ModuleDescriptor.html
 - JUnit User Guide: https://docs.junit.org/current/user-guide/
 - Maven Wrapper: https://maven.apache.org/tools/mavenwrapper.html
-

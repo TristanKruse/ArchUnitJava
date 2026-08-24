@@ -17,7 +17,7 @@ second compatibility calendar.
 
 ## Decision
 
-The proving repository starts on JDK 25 and uses `java.lang.classfile`. Target
+ArchUnitJava starts on JDK 25 and uses `java.lang.classfile`. Target
 classes are parsed as bytes and are never loaded. The domain model must not leak
 JDK parser objects so a later backend can be substituted.
 
@@ -30,4 +30,3 @@ JDK parser objects so a later backend can be substituted.
   importer must bound, catch, and contextualize those failures.
 - A public release must revisit whether Java 17 or 21 compatibility is more
   valuable than the standard API. This ADR does not prejudge that decision.
-

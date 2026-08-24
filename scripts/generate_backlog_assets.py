@@ -68,8 +68,8 @@ REPORT = ("src/main/java/dev/archunitjava/report/**", "src/test/java/dev/archuni
 
 ITEMS = (
     item(1, "build-baseline", "Foundation: bootstrap a reproducible JDK 25 Maven build",
-         "Establish the smallest cross-platform build that compiles, tests, and packages the clean-room scaffold reproducibly.", (),
-         ("The Maven Wrapper is pinned with checksum verification and works on Windows and Linux.", "JDK and Maven versions are enforced and JUnit runs the smoke contract.", "CI verifies the untouched scaffold without publishing artifacts."),
+         "Establish the smallest cross-platform build that compiles, tests, and packages the initial ArchUnitJava project reproducibly.", (),
+         ("The Maven Wrapper is pinned with checksum verification and works on Windows and Linux.", "JDK and Maven versions are enforced and JUnit runs the smoke contract.", "CI verifies the initial project without publishing artifacts."),
          ("pom.xml", "mvnw", "mvnw.cmd", ".mvn/**", ".github/workflows/ci.yml", "src/main/java/dev/archunitjava/ArchUnitJava.java", "src/test/java/dev/archunitjava/ArchUnitJavaTest.java"), "foundation", kind="infrastructure", initially_completed=True),
     item(2, "graph-kernel", "Foundation: deterministic Java dependency-graph kernel",
          "Implement stable identifiers, dependency kinds, evidence, nodes, edges, and an immutable deterministic graph.", (1,),

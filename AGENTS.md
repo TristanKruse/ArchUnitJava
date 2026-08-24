@@ -2,10 +2,12 @@
 
 ## Purpose
 
-This is a clean-room Java architecture-testing library and an ArchUnitDev2
-workflow proving repository. Implement only the active issue contract. Do not
-copy source code from the upstream ArchUnit project or claim API compatibility
-unless an issue explicitly defines and tests it.
+ArchUnitJava is the Java member of the ArchUnitEverything architecture-testing
+family. This repository is the product repository: implementation, tests,
+documentation, examples, and release artifacts must describe the library, not
+the development workflow used to create it. Implement only the active issue
+contract. Do not copy source code from the upstream ArchUnit project or claim
+API compatibility unless an issue explicitly defines and tests it.
 
 ## Trust boundary
 
@@ -54,4 +56,3 @@ The stable pipeline is `EXTRACT -> PROJECT -> ASSERT -> REPORT`.
 
 Do not weaken tests, change protected contracts, broaden allowed paths, publish
 artifacts, mutate GitHub issues, or merge branches as part of a product issue.
-

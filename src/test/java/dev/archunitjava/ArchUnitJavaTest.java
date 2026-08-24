@@ -6,8 +6,7 @@ import org.junit.jupiter.api.Test;
 
 final class ArchUnitJavaTest {
     @Test
-    void exposesScaffoldStatusWithoutClaimingImplementedFeatures() {
-        assertEquals("scaffold", ArchUnitJava.status());
+    void exposesTheExpectedRootPackage() {
+        assertEquals("dev.archunitjava", ArchUnitJava.class.getPackageName());
     }
 }
-

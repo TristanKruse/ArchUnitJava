@@ -10,7 +10,7 @@ public final class ClassFileReadResult {
     private final List<ParsedClassFile> classes;
     private final List<ClassFileDiagnostic> diagnostics;
 
-    ClassFileReadResult(List<ParsedClassFile> classes, List<ClassFileDiagnostic> diagnostics) {
+    public ClassFileReadResult(List<ParsedClassFile> classes, List<ClassFileDiagnostic> diagnostics) {
         this.classes = sorted(classes, "parsedClass");
         this.diagnostics = sorted(diagnostics, "diagnostic");
     }

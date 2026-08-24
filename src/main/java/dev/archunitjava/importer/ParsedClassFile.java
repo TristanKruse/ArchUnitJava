@@ -1,6 +1,8 @@
 package dev.archunitjava.importer;
 
 import java.util.Objects;
+import java.util.List;
+import java.util.TreeSet;
 
 /** Backend-neutral class header extracted from an untrusted class resource. */
 public record ParsedClassFile(
@@ -11,7 +13,8 @@ public record ParsedClassFile(
         boolean moduleDescriptor,
         String resourceName,
         ClassFileOrigin origin,
-        int precedence)
+        int precedence,
+        List<ParsedMember> declaredMembers)
         implements Comparable<ParsedClassFile> {
     public ParsedClassFile {
         if (binaryName == null || binaryName.isBlank()) {
@@ -25,6 +28,33 @@ public record ParsedClassFile(
         }
         Objects.requireNonNull(origin, "origin");
         if (precedence < 0) throw new IllegalArgumentException("precedence must not be negative");
+        Objects.requireNonNull(declaredMembers, "declaredMembers");
+        TreeSet<ParsedMember> sortedMembers = new TreeSet<>();
+        for (ParsedMember member : declaredMembers) {
+            sortedMembers.add(Objects.requireNonNull(member, "declaredMember"));
+        }
+        declaredMembers = List.copyOf(sortedMembers);
+    }
+
+    public ParsedClassFile(
+            String binaryName,
+            int accessFlags,
+            int majorVersion,
+            int minorVersion,
+            boolean moduleDescriptor,
+            String resourceName,
+            ClassFileOrigin origin,
+            int precedence) {
+        this(
+                binaryName,
+                accessFlags,
+                majorVersion,
+                minorVersion,
+                moduleDescriptor,
+                resourceName,
+                origin,
+                precedence,
+                List.of());
     }
 
     @Override

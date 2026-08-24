@@ -9,7 +9,8 @@ interface ClassFileParserBackend {
             int accessFlags,
             int majorVersion,
             int minorVersion,
-            boolean moduleDescriptor) {}
+            boolean moduleDescriptor,
+            java.util.List<ParsedMember> declaredMembers) {}
 
     @FunctionalInterface
     interface TraversalObserver {

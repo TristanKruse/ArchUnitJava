@@ -81,7 +81,8 @@ public final class ClassFileReader {
                     header.moduleDescriptor(),
                     resource.name(),
                     resource.origin(),
-                    resource.precedence()));
+                    resource.precedence(),
+                    header.declaredMembers()));
         } catch (RuntimeException failure) {
             diagnostics.add(failure(resource, ClassFileDiagnosticCode.MALFORMED_CLASS_FILE,
                     tracker.phase, failure));

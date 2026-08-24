@@ -6,6 +6,8 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassFileElement;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.CompoundElement;
+import java.util.ArrayList;
+import java.util.List;
 
 /** JDK Class-File API implementation. No JDK parser model escapes this class. */
 final class JdkClassFileParserBackend implements ClassFileParserBackend {
@@ -19,12 +21,26 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
         traverse(model);
         observer.phase(ClassFileTraversalPhase.ADAPT_MODEL);
         String binaryName = model.thisClass().asInternalName().replace('/', '.');
+        List<ParsedMember> members = new ArrayList<>();
+        model.fields().forEach(field -> members.add(new ParsedMember(
+                ParsedMember.Kind.FIELD,
+                field.fieldName().stringValue(),
+                field.fieldType().stringValue(),
+                field.flags().flagsMask(),
+                false)));
+        model.methods().forEach(method -> members.add(new ParsedMember(
+                ParsedMember.Kind.METHOD,
+                method.methodName().stringValue(),
+                method.methodType().stringValue(),
+                method.flags().flagsMask(),
+                method.code().isPresent())));
         return new ParsedClassHeader(
                 binaryName,
                 model.flags().flagsMask(),
                 model.majorVersion(),
                 model.minorVersion(),
-                model.isModuleInfo());
+                model.isModuleInfo(),
+                List.copyOf(members));
     }
 
     private static void traverse(CompoundElement<?> compound) {

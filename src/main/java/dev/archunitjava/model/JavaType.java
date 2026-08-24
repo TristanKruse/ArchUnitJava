@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.List;
+import java.util.TreeSet;
 
 /** Immutable top-level Java type description backed only by library-owned values. */
 public final class JavaType implements Comparable<JavaType> {
@@ -18,6 +20,7 @@ public final class JavaType implements Comparable<JavaType> {
     private final String resourceName;
     private final ClassFileOrigin origin;
     private final int precedence;
+    private final List<JavaMember> declaredMembers;
 
     JavaType(
             JavaTypeName name,
@@ -28,7 +31,8 @@ public final class JavaType implements Comparable<JavaType> {
             ClassFileVersion classFileVersion,
             String resourceName,
             ClassFileOrigin origin,
-            int precedence) {
+            int precedence,
+            List<JavaMember> declaredMembers) {
         this.name = Objects.requireNonNull(name, "name");
         this.owner = new TypeOwner(name.packageName());
         this.kind = Objects.requireNonNull(kind, "kind");
@@ -47,6 +51,19 @@ public final class JavaType implements Comparable<JavaType> {
         this.origin = Objects.requireNonNull(origin, "origin");
         if (precedence < 0) throw new IllegalArgumentException("precedence must not be negative");
         this.precedence = precedence;
+        Objects.requireNonNull(declaredMembers, "declaredMembers");
+        TreeSet<JavaMember> sortedMembers = new TreeSet<>();
+        for (JavaMember member : declaredMembers) {
+            JavaMember value = Objects.requireNonNull(member, "declaredMember");
+            if (!value.owner().equals(name)) {
+                throw new IllegalArgumentException("Declared member owner must match its type");
+            }
+            if (!sortedMembers.add(value)) {
+                throw new IllegalArgumentException(
+                        "Duplicate declared member signature: " + value.signature().stableKey());
+            }
+        }
+        this.declaredMembers = List.copyOf(sortedMembers);
     }
 
     public JavaTypeName name() {
@@ -97,6 +114,10 @@ public final class JavaType implements Comparable<JavaType> {
 
     public int precedence() {
         return precedence;
+    }
+
+    public List<JavaMember> declaredMembers() {
+        return declaredMembers;
     }
 
     @Override

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "archunit-java-issue-002-pilot",
+  "branch": "campaign/issue-002-graph-kernel",
+  "profile": "profile.toml",
+  "tasks": [
+    {
+      "task": "tasks/001-build-baseline.json",
+      "issue": 1,
+      "contract": "contracts/001-build-baseline",
+      "initially_completed": true
+    },
+    {
+      "task": "tasks/002-graph-kernel.json",
+      "issue": 2,
+      "contract": "contracts/002-graph-kernel"
+    }
+  ]
+}

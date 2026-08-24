@@ -20,7 +20,7 @@
       "phase:foundation",
       "type:feature",
       "contract:specified",
-      "contract:missing",
+      "contract:executable",
       "workflow:dependency-ready"
     ],
     "initially_completed": false

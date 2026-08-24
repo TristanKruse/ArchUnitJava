@@ -18,7 +18,7 @@ Implement stable identifiers, dependency kinds, evidence, nodes, edges, and an i
 ## Workflow
 
 - Task specification: `.archunitdev/tasks/002-graph-kernel.json`
-- Executable contract overlay: not authored; do not schedule
+- Executable contract overlay: `.archunitdev/contracts/002-graph-kernel/`
 - Phase: `foundation`
 - Type: `feature`
 - Depends on: #1

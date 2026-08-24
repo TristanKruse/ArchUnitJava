@@ -12,7 +12,8 @@
     },
     {
       "task": "tasks/002-graph-kernel.json",
-      "issue": 2
+      "issue": 2,
+      "contract": "contracts/002-graph-kernel"
     },
     {
       "task": "tasks/003-patterns.json",

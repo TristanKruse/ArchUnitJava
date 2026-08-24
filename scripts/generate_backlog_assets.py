@@ -21,6 +21,7 @@ class Item:
     kind: str = "feature"
     non_goals: tuple[str, ...] = ()
     initially_completed: bool = False
+    contract_ready: bool = False
 
     @property
     def task_id(self) -> str:
@@ -44,6 +45,7 @@ def item(
     kind: str = "feature",
     non_goals: tuple[str, ...] = (),
     initially_completed: bool = False,
+    contract_ready: bool = False,
 ) -> Item:
     return Item(
         number,
@@ -57,6 +59,7 @@ def item(
         kind,
         non_goals,
         initially_completed,
+        contract_ready,
     )
 
 
@@ -73,7 +76,7 @@ ITEMS = (
          ("pom.xml", "mvnw", "mvnw.cmd", ".mvn/**", ".github/workflows/ci.yml", "src/main/java/dev/archunitjava/ArchUnitJava.java", "src/test/java/dev/archunitjava/ArchUnitJavaTest.java"), "foundation", kind="infrastructure", initially_completed=True),
     item(2, "graph-kernel", "Foundation: deterministic Java dependency-graph kernel",
          "Implement stable identifiers, dependency kinds, evidence, nodes, edges, and an immutable deterministic graph.", (1,),
-         ("Package, type, member, module, and location identifiers reject invalid or ambiguous values.", "Parallel edges merge evidence without duplicates and all iteration is stable.", "Graph construction rejects unknown endpoints and preserves isolated nodes."), MAIN, "foundation"),
+         ("Package, type, member, module, and location identifiers reject invalid or ambiguous values.", "Parallel edges merge evidence without duplicates and all iteration is stable.", "Graph construction rejects unknown endpoints and preserves isolated nodes."), MAIN, "foundation", contract_ready=True),
     item(3, "patterns", "Foundation: Java-aware glob, regex, and qualified-name patterns",
          "Compile user patterns once and match paths, packages, binary names, and source-style type names with explicit semantics.", (1,),
          ("Path and qualified-name separators have distinct documented glob rules.", "Regex and exact patterns share immutable matcher descriptions.", "Malformed patterns fail as user errors before analysis starts."), MAIN, "foundation"),
@@ -324,7 +327,7 @@ def main() -> None:
                     f"phase:{entry.phase}",
                     f"type:{entry.kind}",
                     "contract:specified",
-                    "contract:executable" if entry.initially_completed else "contract:missing",
+                    "contract:executable" if entry.contract_ready or entry.initially_completed else "contract:missing",
                     "workflow:completed" if entry.initially_completed else (
                         "workflow:dependency-ready"
                         if set(entry.dependencies) <= completed_numbers
@@ -404,7 +407,7 @@ def _issue_body(entry: Item, blocks: list[int]) -> str:
         "## Workflow\n\n"
         f"- Task specification: `.archunitdev/tasks/{entry.task_name}`\n"
         f"- Executable contract overlay: "
-        f"{f'`.archunitdev/contracts/{entry.number:03d}-{entry.slug}/`' if entry.initially_completed else 'not authored; do not schedule'}\n"
+        f"{f'`.archunitdev/contracts/{entry.number:03d}-{entry.slug}/`' if entry.contract_ready or entry.initially_completed else 'not authored; do not schedule'}\n"
         f"- Phase: `{entry.phase}`\n"
         f"- Type: `{entry.kind}`\n"
         f"- Depends on: {depends}\n"
@@ -466,7 +469,7 @@ def _campaign(by_number: dict[int, Item]) -> dict[str, object]:
             {
                 "task": f"tasks/{by_number[number].task_name}",
                 "issue": number,
-                **({"contract": f"contracts/{number:03d}-{by_number[number].slug}"} if by_number[number].initially_completed else {}),
+                **({"contract": f"contracts/{number:03d}-{by_number[number].slug}"} if by_number[number].contract_ready or by_number[number].initially_completed else {}),
                 **({"initially_completed": True} if by_number[number].initially_completed else {}),
             }
             for number in order

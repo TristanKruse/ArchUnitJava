@@ -1,0 +1,38 @@
+{
+  "id": "java-017-nested-types",
+  "title": "Model: nested, local, anonymous types and nestmates",
+  "objective": "Reconstruct ownership evidence from InnerClasses, EnclosingMethod, NestHost, and NestMembers without inventing source nesting.",
+  "acceptance_criteria": [
+    "Member, local, anonymous, and top-level types remain distinguishable when attributes permit.",
+    "Nest host/member relationships are modeled separately from lexical ownership.",
+    "Conflicting attributes produce bounded diagnostics and deterministic fallback."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-009-type-model",
+    "java-010-member-model",
+    "java-013-inheritance"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

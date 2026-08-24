@@ -1,0 +1,37 @@
+{
+  "id": "java-036-member-selectors",
+  "title": "API: field, method, constructor, and code-unit selectors",
+  "objective": "Select members by owner, name, descriptor, parameters, return type, and declaring context.",
+  "acceptance_criteria": [
+    "Overloaded members are selectable without ambiguous source rendering.",
+    "Constructors and static initializers have explicit vocabulary.",
+    "Member selectors compose with containing type and package selectors."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-010-member-model",
+    "java-035-type-package-selectors"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

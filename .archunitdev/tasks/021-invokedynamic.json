@@ -1,0 +1,41 @@
+{
+  "id": "java-021-invokedynamic",
+  "title": "Extract: lambdas, method references, and invokedynamic evidence",
+  "objective": "Interpret bounded bootstrap-method patterns to expose Java lambda and method-reference dependencies without compiler equivalence claims.",
+  "acceptance_criteria": [
+    "LambdaMetafactory targets retain implementation handle and functional-interface evidence.",
+    "Unknown bootstrap methods remain generic invokedynamic evidence.",
+    "String concatenation and unrelated dynamic call sites are not mislabeled as lambdas."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-008-classfile-reader",
+    "java-010-member-model",
+    "java-011-jvm-types",
+    "java-020-code-accesses"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/importer/**",
+    "src/test/java/dev/archunitjava/importer/**",
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

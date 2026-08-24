@@ -1,0 +1,41 @@
+{
+  "id": "java-053-architecture-presets",
+  "title": "Presets: clean, onion, hexagonal, and provider-SDK boundaries",
+  "objective": "Offer transparent composable Java presets that expand to ordinary inspectable rules.",
+  "acceptance_criteria": [
+    "Presets never silently choose project package names.",
+    "Expanded layers and rules can be renamed, explained, excluded, and extended.",
+    "Clean dependency direction and provider-facing SDK boundaries have executable examples."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-041-dependency-rules",
+    "java-046-public-interface",
+    "java-048-slices",
+    "java-049-layers",
+    "java-050-jpms-rules",
+    "java-052-exhaustive-policies"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

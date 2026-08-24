@@ -1,0 +1,37 @@
+{
+  "id": "java-011-jvm-types",
+  "title": "Model: JVM descriptors, primitives, arrays, and method types",
+  "objective": "Decode field and method descriptors into a lossless immutable JVM type vocabulary.",
+  "acceptance_criteria": [
+    "Primitive, void, reference, and multidimensional array types round-trip.",
+    "Method parameters and returns retain exact descriptor order.",
+    "Invalid descriptors fail locally without partial model corruption."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-008-classfile-reader",
+    "java-009-type-model"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

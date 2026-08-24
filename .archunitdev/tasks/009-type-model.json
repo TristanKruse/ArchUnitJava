@@ -1,0 +1,36 @@
+{
+  "id": "java-009-type-model",
+  "title": "Model: classes, interfaces, enums, annotations, and modifiers",
+  "objective": "Build immutable Java type descriptions with binary/source names, kind, ownership, flags, and origin.",
+  "acceptance_criteria": [
+    "Top-level type kinds and JVM access flags map without losing unsupported bits.",
+    "Binary names remain canonical while readable names are derived.",
+    "Malformed and unsupported class versions remain explicit diagnostics."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-008-classfile-reader"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

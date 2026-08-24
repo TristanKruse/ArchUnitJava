@@ -1,0 +1,40 @@
+{
+  "id": "java-020-code-accesses",
+  "title": "Extract: method calls, constructor calls, and field accesses",
+  "objective": "Walk Code attributes and emit member-level access evidence with caller, target owner, descriptor, and location.",
+  "acceptance_criteria": [
+    "Invocation opcodes, constructor calls, field reads, and field writes have distinct kinds.",
+    "Interface, virtual, special, and static dispatch evidence is preserved without pretending to resolve runtime dispatch.",
+    "Malformed code and missing line data do not discard valid surrounding evidence."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-010-member-model",
+    "java-011-jvm-types",
+    "java-012-locations"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/importer/**",
+    "src/test/java/dev/archunitjava/importer/**",
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

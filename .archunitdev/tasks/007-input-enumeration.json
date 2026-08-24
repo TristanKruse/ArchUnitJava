@@ -1,0 +1,36 @@
+{
+  "id": "java-007-input-enumeration",
+  "title": "Import: enumerate trusted class directories, JARs, and runtime images",
+  "objective": "Turn caller-approved locations into a bounded deterministic stream of class-file resources.",
+  "acceptance_criteria": [
+    "Directories, JARs, and optional JRT modules retain their origin and precedence.",
+    "Traversal does not follow symlinks or escape approved roots by default.",
+    "Unreadable, missing, duplicate, and unsupported inputs yield typed diagnostics."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-006-project-discovery"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/importer/**",
+    "src/test/java/dev/archunitjava/importer/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

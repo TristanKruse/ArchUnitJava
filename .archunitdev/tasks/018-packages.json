@@ -1,0 +1,37 @@
+{
+  "id": "java-018-packages",
+  "title": "Model: packages, package-info annotations, and unnamed packages",
+  "objective": "Aggregate types into Java packages while preserving package-info metadata and origin boundaries.",
+  "acceptance_criteria": [
+    "Package identifiers distinguish named and unnamed packages.",
+    "Package annotations and documentation-carrier classes are exposed without ordinary-type noise.",
+    "Split packages across inputs retain every origin for later JPMS policy checks."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-009-type-model",
+    "java-014-annotations"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

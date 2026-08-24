@@ -1,0 +1,38 @@
+{
+  "id": "java-015-generic-signatures",
+  "title": "Model: generic signatures, type variables, and wildcards",
+  "objective": "Parse optional Signature attributes without confusing generic references with erased JVM descriptors.",
+  "acceptance_criteria": [
+    "Parameterized types, bounds, wildcards, arrays, and nested owners are represented.",
+    "Malformed or absent signatures fall back to erased types with diagnostics where appropriate.",
+    "Rules can later choose erased, generic, or combined dependency evidence."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-009-type-model",
+    "java-010-member-model",
+    "java-011-jvm-types"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

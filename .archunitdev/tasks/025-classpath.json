@@ -1,0 +1,38 @@
+{
+  "id": "java-025-classpath",
+  "title": "Packaging: directory, JAR, classpath, and module-path precedence",
+  "objective": "Assemble imported resources using explicit deterministic Java lookup precedence without loading classes.",
+  "acceptance_criteria": [
+    "Each selected class records its winning input and shadowed alternatives.",
+    "Classpath and module-path modes have separate documented rules.",
+    "Manifest Class-Path entries are opt-in, bounded, and contained."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-006-project-discovery",
+    "java-007-input-enumeration",
+    "java-008-classfile-reader"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/importer/**",
+    "src/test/java/dev/archunitjava/importer/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

@@ -1,0 +1,36 @@
+{
+  "id": "java-056-diagram-renderers",
+  "title": "Reports: deterministic DOT and Mermaid renderers",
+  "objective": "Render graph snapshots as safely escaped DOT and Mermaid diagrams.",
+  "acceptance_criteria": [
+    "Hostile names cannot inject syntax, links, HTML, or directives.",
+    "Equivalent snapshots produce byte-identical output across platforms.",
+    "Truncation and aggregation remain visible in output metadata."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-055-graph-snapshot"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/report/**",
+    "src/test/java/dev/archunitjava/report/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

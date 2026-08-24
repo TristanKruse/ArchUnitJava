@@ -1,0 +1,43 @@
+{
+  "id": "java-046-public-interface",
+  "title": "Rules: visibility and approved public-interface boundaries",
+  "objective": "Require consumers to cross package or module boundaries only through approved visible API types and members.",
+  "acceptance_criteria": [
+    "Java visibility, package access, protected access, nestmates, and JPMS exports are not conflated.",
+    "Violations identify the internal target and approved entry point when unambiguous.",
+    "Reflection and runtime `--add-exports` remain documented blind spots."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-005-results",
+    "java-013-inheritance",
+    "java-018-packages",
+    "java-024-jpms-model",
+    "java-037-semantic-selectors",
+    "java-041-dependency-rules"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/rules/**",
+    "src/test/java/dev/archunitjava/rules/**",
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

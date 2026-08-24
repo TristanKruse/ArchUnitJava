@@ -1,0 +1,39 @@
+{
+  "id": "java-058-result-exports",
+  "title": "Results: JSON, SARIF, JUnit XML, and console rendering",
+  "objective": "Render rule results for people and CI while preserving stable identities, severity, rationale, and locations.",
+  "acceptance_criteria": [
+    "JSON is versioned and deterministic; SARIF locations are repository-contained.",
+    "JUnit XML and console output distinguish violations from analysis errors.",
+    "Renderer escaping and path normalization handle hostile input."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project."
+  ],
+  "dependencies": [
+    "java-005-results",
+    "java-012-locations",
+    "java-039-rule-metadata"
+  ],
+  "allowed_paths": [
+    "pom.xml",
+    "src/main/java/dev/archunitjava/report/**",
+    "src/test/java/dev/archunitjava/report/**",
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

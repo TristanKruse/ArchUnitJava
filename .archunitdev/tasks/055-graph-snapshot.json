@@ -1,0 +1,39 @@
+{
+  "id": "java-055-graph-snapshot",
+  "title": "Reports: immutable graph snapshots and query options",
+  "objective": "Create stable report snapshots with filtering, grouping, collapse, and evidence drill-down independent from renderers.",
+  "acceptance_criteria": [
+    "Nodes and edges have stable IDs and snapshots are detached immutable values.",
+    "Package, type, member, layer, slice, artifact, and module collapse retain counts.",
+    "All renderers consume exactly the same queried snapshot."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-033-projection",
+    "java-038-selector-composition"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/report/**",
+    "src/test/java/dev/archunitjava/report/**",
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

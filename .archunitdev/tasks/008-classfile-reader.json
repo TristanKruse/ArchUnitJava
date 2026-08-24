@@ -1,0 +1,36 @@
+{
+  "id": "java-008-classfile-reader",
+  "title": "Import: JDK Class-File API reader and parser boundary",
+  "objective": "Parse untrusted class bytes through `java.lang.classfile` behind a backend-neutral adapter.",
+  "acceptance_criteria": [
+    "No target class is loaded, linked, initialized, or reflected upon.",
+    "Lazy parser failures are caught with resource and traversal context.",
+    "Parser-specific model objects never escape the importer boundary."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-007-input-enumeration"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/importer/**",
+    "src/test/java/dev/archunitjava/importer/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

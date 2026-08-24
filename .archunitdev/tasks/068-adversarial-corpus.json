@@ -1,0 +1,40 @@
+{
+  "id": "java-068-adversarial-corpus",
+  "title": "Security: adversarial importer, rule, cache, and renderer corpus",
+  "objective": "Test the full threat model against hostile bytecode, archives, paths, metadata, selectors, caches, and outputs.",
+  "acceptance_criteria": [
+    "No target code, bootstrap method, build script, plugin, annotation processor, or static initializer executes.",
+    "Containment, resource budgets, parser failures, output escaping, and baseline parsing fail closed.",
+    "Residual denial-of-service and static-analysis blind spots are documented honestly."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-032-input-security",
+    "java-056-diagram-renderers",
+    "java-057-data-html-renderers",
+    "java-058-result-exports",
+    "java-059-baselines"
+  ],
+  "allowed_paths": [
+    "src/test/**",
+    "test-fixtures/**",
+    "docs/THREAT_MODEL.md"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

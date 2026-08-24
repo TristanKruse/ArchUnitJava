@@ -1,0 +1,37 @@
+{
+  "id": "java-054-plantuml",
+  "title": "Diagrams: bounded PlantUML component adherence and export",
+  "objective": "Validate selected slices/layers against a safe documented PlantUML component subset and export the current architecture.",
+  "acceptance_criteria": [
+    "Components, aliases, arrows, and approved stereotypes parse deterministically.",
+    "Missing and forbidden edges produce Java evidence without executing includes or macros.",
+    "Export escapes target strings and is byte-stable."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-048-slices",
+    "java-049-layers"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

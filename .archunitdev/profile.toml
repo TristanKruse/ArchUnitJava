@@ -1,0 +1,19 @@
+schema_version = 1
+id = "java-25-maven-library"
+display_name = "Java 25 Maven library"
+
+[variables]
+maven = ".\\mvnw.cmd"
+
+[workflow]
+max_repair_rounds = 1
+
+[[gates]]
+id = "tests"
+command = ["{maven}", "--batch-mode", "--no-transfer-progress", "test"]
+timeout_seconds = 240
+
+[[gates]]
+id = "verify"
+command = ["{maven}", "--batch-mode", "--no-transfer-progress", "verify"]
+timeout_seconds = 300

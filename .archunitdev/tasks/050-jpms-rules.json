@@ -1,0 +1,39 @@
+{
+  "id": "java-050-jpms-rules",
+  "title": "Java modules: readability, exports, opens, and service policies",
+  "objective": "Enforce architectural rules over JPMS descriptors independently from observed class dependencies.",
+  "acceptance_criteria": [
+    "Rules cover requires/transitive/static, qualified exports/opens, uses, and provides.",
+    "Descriptor policy and bytecode-observed dependency policy can be compared without conflation.",
+    "Automatic and unnamed modules require explicit caller policy."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-005-results",
+    "java-024-jpms-model",
+    "java-035-type-package-selectors",
+    "java-040-empty-selection"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

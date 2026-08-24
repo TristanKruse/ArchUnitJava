@@ -1,0 +1,39 @@
+{
+  "id": "java-033-projection",
+  "title": "Projection: immutable package, type, member, and module views",
+  "objective": "Relabel and aggregate raw dependency evidence without losing contributing edges or isolated nodes.",
+  "acceptance_criteria": [
+    "Projection functions are pure values and can filter, relabel, or drop edges.",
+    "Parallel projected edges retain stable complete evidence sets.",
+    "Package, type, member, classpath, and module projections share one deterministic contract."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-002-graph-kernel",
+    "java-019-declaration-dependencies",
+    "java-020-code-accesses",
+    "java-024-jpms-model"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

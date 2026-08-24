@@ -1,0 +1,36 @@
+{
+  "id": "java-012-locations",
+  "title": "Model: source files, line numbers, and bytecode locations",
+  "objective": "Attach honest source and bytecode locations to types, members, and dependency evidence when metadata exists.",
+  "acceptance_criteria": [
+    "Missing debug metadata is represented as absent, never fabricated.",
+    "Line tables map offsets deterministically and handle repeated ranges.",
+    "Locations include class resource origin without leaking machine-specific absolute paths."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-008-classfile-reader"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

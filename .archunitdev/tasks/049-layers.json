@@ -1,0 +1,39 @@
+{
+  "id": "java-049-layers",
+  "title": "Layers: named Java architecture layers and access policies",
+  "objective": "Define reusable named layers and enforce allowed, forbidden, and isolated access relationships.",
+  "acceptance_criteria": [
+    "Optional and required layers have explicit empty behavior.",
+    "Layer definitions reject ambiguous membership unless policy allows it.",
+    "Only-accessed-by, may-only-access, and no-access policies share evidence semantics."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-005-results",
+    "java-033-projection",
+    "java-038-selector-composition",
+    "java-040-empty-selection"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

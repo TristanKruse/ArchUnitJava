@@ -1,0 +1,35 @@
+{
+  "id": "java-057-data-html-renderers",
+  "title": "Reports: JSON, CSV, D2, and self-contained HTML",
+  "objective": "Export one versioned graph schema through data, diagram, and bounded interactive HTML formats.",
+  "acceptance_criteria": [
+    "JSON and CSV schemas preserve stable IDs, evidence counts, and query metadata.",
+    "D2 and HTML escape every target-controlled string.",
+    "HTML uses no remote scripts and enforces explicit large-graph limits."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project."
+  ],
+  "dependencies": [
+    "java-055-graph-snapshot"
+  ],
+  "allowed_paths": [
+    "pom.xml",
+    "src/main/java/dev/archunitjava/report/**",
+    "src/test/java/dev/archunitjava/report/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

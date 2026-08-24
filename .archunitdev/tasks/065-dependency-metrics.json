@@ -1,0 +1,38 @@
+{
+  "id": "java-065-dependency-metrics",
+  "title": "Metrics: coupling, instability, distance, and cumulative dependencies",
+  "objective": "Calculate architecture metrics from explicit projections with documented edge and grouping semantics.",
+  "acceptance_criteria": [
+    "Afferent/efferent coupling, instability, abstractness, distance, CCD, ACD, RACD, and NCCD define empty cases.",
+    "Filters affect subjects and coupling inputs consistently.",
+    "Cycles, disconnected graphs, split packages, and module projections have formula fixtures."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-002-graph-kernel",
+    "java-033-projection",
+    "java-064-source-metrics"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

@@ -1,0 +1,42 @@
+{
+  "id": "java-052-exhaustive-policies",
+  "title": "Rules: exhaustive architecture coverage and overlap checks",
+  "objective": "Require every selected subject to belong to an approved package, layer, slice, or module policy exactly as configured.",
+  "acceptance_criteria": [
+    "Unassigned and multiply assigned subjects are distinct violations.",
+    "Coverage operates on types, packages, or modules with consistent exclusions.",
+    "Generated/external subjects are excluded only by explicit policy."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-005-results",
+    "java-035-type-package-selectors",
+    "java-038-selector-composition",
+    "java-040-empty-selection",
+    "java-041-dependency-rules"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/rules/**",
+    "src/test/java/dev/archunitjava/rules/**",
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

@@ -1,0 +1,37 @@
+{
+  "id": "java-066-dogfood",
+  "title": "Quality: enforce the library's own architecture with itself",
+  "objective": "Add self-hosted architecture tests once the critical Java rules and JUnit seam exist.",
+  "acceptance_criteria": [
+    "Core extraction, projection, rules, reporting, and integrations obey documented dependency boundaries.",
+    "Dogfood tests use public APIs and fail through normal JUnit output.",
+    "Bootstrapping does not create hidden exceptions or test-order dependencies."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-041-dependency-rules",
+    "java-049-layers",
+    "java-060-junit-assertions"
+  ],
+  "allowed_paths": [
+    "src/test/**",
+    "docs/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

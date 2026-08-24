@@ -1,0 +1,40 @@
+{
+  "id": "java-064-source-metrics",
+  "title": "Metrics: Java counts, cohesion, and threshold rules",
+  "objective": "Calculate deterministic package/type/member/source counts and documented Java class-cohesion metrics.",
+  "acceptance_criteria": [
+    "Counts define treatment of synthetic members, records, generated classes, blanks, comments, and missing source.",
+    "LCOM variants state formulas and operate only where required member evidence exists.",
+    "Thresholds use typed units and report every violating subject."
+  ],
+  "non_goals": [
+    "Do not weaken protected contracts, workflow configuration, or unrelated capabilities.",
+    "Do not load or execute target classes, builds, plugins, annotation processors, or code.",
+    "Do not copy implementation code from the upstream ArchUnit project.",
+    "Do not add dependencies or change Maven configuration."
+  ],
+  "dependencies": [
+    "java-009-type-model",
+    "java-010-member-model",
+    "java-012-locations",
+    "java-033-projection",
+    "java-035-type-package-selectors"
+  ],
+  "allowed_paths": [
+    "src/main/java/dev/archunitjava/**",
+    "src/test/java/dev/archunitjava/**"
+  ],
+  "protected_paths": [
+    ".archunitdev/**",
+    "AGENTS.md",
+    "src/test/java/dev/archunitjava/contract/**",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "pom.xml",
+    "mvnw",
+    "mvnw.cmd",
+    ".mvn/**"
+  ],
+  "max_repair_rounds": 1
+}

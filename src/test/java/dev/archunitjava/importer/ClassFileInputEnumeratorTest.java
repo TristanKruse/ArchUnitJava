@@ -73,7 +73,7 @@ class ClassFileInputEnumeratorTest {
         Path classes = Files.createDirectory(temporaryDirectory.resolve("classes"));
         writeClass(classes.resolve("A.class"), 1);
         writeClass(classes.resolve("B.class"), 2);
-        var options = new InputEnumerationOptions(1, 8, 8);
+        var options = new InputEnumerationOptions(1, 8, 8, 8);
 
         InputEnumerationResult result = new ClassFileInputEnumerator(options)
                 .enumerate(List.of(ClassFileInput.directory(classes)));
@@ -85,13 +85,29 @@ class ClassFileInputEnumeratorTest {
     @Test
     void jarEntryBoundsApplyBeforeClassFiltering() throws IOException {
         Path jar = jar("many.jar", "a.txt", "b.txt", "C.class");
-        var options = new InputEnumerationOptions(8, 8, 2);
+        var options = new InputEnumerationOptions(8, 8, 8, 2);
 
         InputEnumerationResult result = new ClassFileInputEnumerator(options)
                 .enumerate(List.of(ClassFileInput.jar(jar)));
 
         assertTrue(result.resources().isEmpty());
         assertEquals(List.of(InputDiagnosticCode.RESOURCE_LIMIT_EXCEEDED), codes(result));
+    }
+
+    @Test
+    void directoryEntryBoundsFailWithoutReturningEncounterOrderDependentPartialData()
+            throws IOException {
+        Path classes = Files.createDirectory(temporaryDirectory.resolve("bounded"));
+        writeClass(classes.resolve("A.class"), 1);
+        writeClass(classes.resolve("B.class"), 2);
+        var options = new InputEnumerationOptions(8, 8, 2, 8);
+
+        InputEnumerationResult result = new ClassFileInputEnumerator(options)
+                .enumerate(List.of(ClassFileInput.directory(classes)));
+
+        assertTrue(result.resources().isEmpty());
+        assertEquals(List.of(InputDiagnosticCode.RESOURCE_LIMIT_EXCEEDED), codes(result));
+        assertEquals("directory-entries:2", result.diagnostics().getFirst().context().get("limit"));
     }
 
     @Test

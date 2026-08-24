@@ -94,7 +94,7 @@ public final class ClassFileInputEnumerator {
         }
         List<Path> candidates;
         try (var paths = Files.walk(root, options.maximumDirectoryDepth())) {
-            candidates = paths.sorted().toList();
+            candidates = paths.limit((long) options.maximumDirectoryEntries() + 1).toList();
         } catch (IOException | SecurityException failure) {
             diagnostics.add(diagnostic(
                     InputDiagnosticCode.IO_FAILURE,
@@ -103,6 +103,12 @@ public final class ClassFileInputEnumerator {
                     "directory-traversal"));
             return;
         }
+        if (candidates.size() > options.maximumDirectoryEntries()) {
+            diagnostics.add(limit(
+                    root.toString(), "directory-entries", options.maximumDirectoryEntries()));
+            return;
+        }
+        candidates = candidates.stream().sorted().toList();
         Set<String> names = new HashSet<>();
         int count = 0;
         for (Path candidate : candidates) {
@@ -204,7 +210,16 @@ public final class ClassFileInputEnumerator {
             }
             List<Path> classes;
             try (var paths = Files.walk(root, options.maximumDirectoryDepth())) {
-                classes = paths.filter(Files::isRegularFile)
+                List<Path> candidates = paths
+                        .limit((long) options.maximumDirectoryEntries() + 1)
+                        .toList();
+                if (candidates.size() > options.maximumDirectoryEntries()) {
+                    diagnostics.add(limit(
+                            display, "directory-entries", options.maximumDirectoryEntries()));
+                    return;
+                }
+                classes = candidates.stream()
+                        .filter(Files::isRegularFile)
                         .filter(path -> path.getFileName().toString().endsWith(".class"))
                         .sorted()
                         .toList();

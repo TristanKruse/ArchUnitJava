@@ -64,7 +64,10 @@ public final class ClassFileResource implements Comparable<ClassFileResource> {
             byte[] buffer = new byte[8192];
             int total = 0;
             int read;
-            while ((read = input.read(buffer, 0, Math.min(buffer.length, maximumBytes + 1 - total)))
+            while ((read = input.read(
+                            buffer,
+                            0,
+                            (int) Math.min(buffer.length, (long) maximumBytes + 1 - total)))
                     != -1) {
                 total += read;
                 if (total > maximumBytes) {

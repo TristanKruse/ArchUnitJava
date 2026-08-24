@@ -167,11 +167,12 @@ public final class ClassFileInputEnumerator {
                     diagnostics.add(limit(jar.toString(), "class-resources", options.maximumResourcesPerInput()));
                     break;
                 }
-                String name = normalizeEntry(entry.getName());
-                if (!validResourceName(name)) {
+                String archiveName = entry.getName();
+                if (!validResourceName(archiveName)) {
                     diagnostics.add(diagnostic(InputDiagnosticCode.INVALID_RESOURCE_NAME, jar.toString(), "entry", entry.getName()));
                     continue;
                 }
+                String name = normalizeEntry(archiveName);
                 if (!names.add(name)) {
                     diagnostics.add(diagnostic(InputDiagnosticCode.DUPLICATE_RESOURCE, jar.toString(), "entry", name));
                     continue;

@@ -95,6 +95,20 @@ class ClassFileInputEnumeratorTest {
     }
 
     @Test
+    void rejectsArchiveNamesThatCouldEscapeOrChangeMeaningAcrossPlatforms()
+            throws IOException {
+        Path jar = jar("hostile.jar", "../Outside.class", "windows\\Alias.class", "/Root.class");
+
+        InputEnumerationResult result = new ClassFileInputEnumerator()
+                .enumerate(List.of(ClassFileInput.jar(jar)));
+
+        assertTrue(result.resources().isEmpty());
+        assertEquals(3, result.diagnostics().size());
+        assertTrue(result.diagnostics().stream()
+                .allMatch(diagnostic -> diagnostic.code() == InputDiagnosticCode.INVALID_RESOURCE_NAME));
+    }
+
+    @Test
     void directoryEntryBoundsFailWithoutReturningEncounterOrderDependentPartialData()
             throws IOException {
         Path classes = Files.createDirectory(temporaryDirectory.resolve("bounded"));

@@ -14,6 +14,7 @@ public record ParsedClassFile(
         String resourceName,
         ClassFileOrigin origin,
         int precedence,
+        java.util.Optional<String> sourceFile,
         List<ParsedMember> declaredMembers)
         implements Comparable<ParsedClassFile> {
     public ParsedClassFile {
@@ -28,6 +29,11 @@ public record ParsedClassFile(
         }
         Objects.requireNonNull(origin, "origin");
         if (precedence < 0) throw new IllegalArgumentException("precedence must not be negative");
+        Objects.requireNonNull(sourceFile, "sourceFile");
+        sourceFile = sourceFile.map(value -> {
+            if (value.isBlank()) throw new IllegalArgumentException("sourceFile must not be blank");
+            return value;
+        });
         Objects.requireNonNull(declaredMembers, "declaredMembers");
         TreeSet<ParsedMember> sortedMembers = new TreeSet<>();
         for (ParsedMember member : declaredMembers) {
@@ -54,6 +60,7 @@ public record ParsedClassFile(
                 resourceName,
                 origin,
                 precedence,
+                java.util.Optional.empty(),
                 List.of());
     }
 

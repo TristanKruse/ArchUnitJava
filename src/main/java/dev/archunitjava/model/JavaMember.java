@@ -13,6 +13,8 @@ public final class JavaMember implements Comparable<JavaMember> {
     private final int accessFlags;
     private final int unrecognizedAccessFlags;
     private final boolean hasCode;
+    private final DeclarationLocation location;
+    private final LineNumberTable lineNumbers;
 
     JavaMember(
             JavaMemberSignature signature,
@@ -20,7 +22,9 @@ public final class JavaMember implements Comparable<JavaMember> {
             Set<JavaMemberModifier> modifiers,
             int accessFlags,
             int unrecognizedAccessFlags,
-            boolean hasCode) {
+            boolean hasCode,
+            DeclarationLocation location,
+            LineNumberTable lineNumbers) {
         this.signature = Objects.requireNonNull(signature, "signature");
         this.kind = Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(modifiers, "modifiers");
@@ -34,6 +38,11 @@ public final class JavaMember implements Comparable<JavaMember> {
             throw new IllegalArgumentException("fields cannot contain bytecode");
         }
         this.hasCode = hasCode;
+        this.location = Objects.requireNonNull(location, "location");
+        this.lineNumbers = Objects.requireNonNull(lineNumbers, "lineNumbers");
+        if (!hasCode && !lineNumbers.entries().isEmpty()) {
+            throw new IllegalArgumentException("Members without bytecode cannot have line numbers");
+        }
     }
 
     public JavaMemberSignature signature() {
@@ -74,6 +83,23 @@ public final class JavaMember implements Comparable<JavaMember> {
 
     public boolean isCodeUnit() {
         return kind != JavaMemberKind.FIELD;
+    }
+
+    public DeclarationLocation location() {
+        return location;
+    }
+
+    public LineNumberTable lineNumbers() {
+        return lineNumbers;
+    }
+
+    public BytecodeLocation bytecodeLocation(int bytecodeOffset) {
+        if (!hasCode) throw new IllegalStateException("Member has no bytecode");
+        return new BytecodeLocation(
+                location.resource(),
+                location.sourceFile(),
+                bytecodeOffset,
+                lineNumbers.lineAt(bytecodeOffset));
     }
 
     public JvmType fieldType() {

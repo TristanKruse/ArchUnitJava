@@ -10,6 +10,7 @@ interface ClassFileParserBackend {
             int majorVersion,
             int minorVersion,
             boolean moduleDescriptor,
+            java.util.Optional<String> sourceFile,
             java.util.List<ParsedMember> declaredMembers) {}
 
     @FunctionalInterface

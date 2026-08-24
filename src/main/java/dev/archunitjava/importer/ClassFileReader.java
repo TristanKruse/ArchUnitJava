@@ -82,6 +82,7 @@ public final class ClassFileReader {
                     resource.name(),
                     resource.origin(),
                     resource.precedence(),
+                    header.sourceFile(),
                     header.declaredMembers()));
         } catch (RuntimeException failure) {
             diagnostics.add(failure(resource, ClassFileDiagnosticCode.MALFORMED_CLASS_FILE,

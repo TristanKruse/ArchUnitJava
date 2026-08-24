@@ -1,6 +1,5 @@
 package dev.archunitjava.model;
 
-import dev.archunitjava.importer.ClassFileOrigin;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Objects;
@@ -18,9 +17,9 @@ public final class JavaType implements Comparable<JavaType> {
     private final int unrecognizedAccessFlags;
     private final ClassFileVersion classFileVersion;
     private final String resourceName;
-    private final ClassFileOrigin origin;
     private final int precedence;
     private final List<JavaMember> declaredMembers;
+    private final DeclarationLocation location;
 
     JavaType(
             JavaTypeName name,
@@ -30,8 +29,8 @@ public final class JavaType implements Comparable<JavaType> {
             int unrecognizedAccessFlags,
             ClassFileVersion classFileVersion,
             String resourceName,
-            ClassFileOrigin origin,
             int precedence,
+            DeclarationLocation location,
             List<JavaMember> declaredMembers) {
         this.name = Objects.requireNonNull(name, "name");
         this.owner = new TypeOwner(name.packageName());
@@ -48,9 +47,9 @@ public final class JavaType implements Comparable<JavaType> {
             throw new IllegalArgumentException("resourceName must not be blank");
         }
         this.resourceName = resourceName;
-        this.origin = Objects.requireNonNull(origin, "origin");
         if (precedence < 0) throw new IllegalArgumentException("precedence must not be negative");
         this.precedence = precedence;
+        this.location = Objects.requireNonNull(location, "location");
         Objects.requireNonNull(declaredMembers, "declaredMembers");
         TreeSet<JavaMember> sortedMembers = new TreeSet<>();
         for (JavaMember member : declaredMembers) {
@@ -108,16 +107,16 @@ public final class JavaType implements Comparable<JavaType> {
         return resourceName;
     }
 
-    public ClassFileOrigin origin() {
-        return origin;
-    }
-
     public int precedence() {
         return precedence;
     }
 
     public List<JavaMember> declaredMembers() {
         return declaredMembers;
+    }
+
+    public DeclarationLocation location() {
+        return location;
     }
 
     @Override
@@ -127,6 +126,6 @@ public final class JavaType implements Comparable<JavaType> {
         result = name.compareTo(other.name);
         if (result != 0) return result;
         result = resourceName.compareTo(other.resourceName);
-        return result != 0 ? result : origin.compareTo(other.origin);
+        return result != 0 ? result : location.resource().compareTo(other.location.resource());
     }
 }

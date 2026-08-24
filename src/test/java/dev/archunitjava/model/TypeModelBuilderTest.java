@@ -39,7 +39,8 @@ class TypeModelBuilderTest {
         assertEquals("Service", type.name().simpleName());
         assertEquals(new TypeOwner("example.domain"), type.owner());
         assertEquals(new ClassFileVersion(ClassFile.JAVA_25_VERSION, 0), type.classFileVersion());
-        assertEquals(origin("example/domain/Service.class"), type.origin());
+        assertEquals("test-classes", type.location().resource().container());
+        assertEquals("example/domain/Service.class", type.location().resource().entry());
         assertEquals(flags, type.accessFlags());
         assertEquals(0, type.unrecognizedAccessFlags());
     }

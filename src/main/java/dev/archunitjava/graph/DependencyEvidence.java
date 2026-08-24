@@ -20,11 +20,11 @@ public record DependencyEvidence(
         if (bytecodeOffset.isPresent() && bytecodeOffset.getAsInt() < 0) {
             throw new IllegalArgumentException("Bytecode offset must not be negative");
         }
-        if (sourceFile.isPresent() && sourceFile.orElseThrow().isBlank()) {
-            throw new IllegalArgumentException("Source file must not be blank");
+        if (sourceFile.isPresent() && !safeSourceFile(sourceFile.orElseThrow())) {
+            throw new IllegalArgumentException("Source file must be a safe file name");
         }
-        if (lineNumber.isPresent() && lineNumber.getAsInt() <= 0) {
-            throw new IllegalArgumentException("Line number must be positive");
+        if (lineNumber.isPresent() && lineNumber.getAsInt() < 0) {
+            throw new IllegalArgumentException("Line number must not be negative");
         }
     }
 
@@ -64,5 +64,14 @@ public record DependencyEvidence(
     private static int compare(OptionalInt left, OptionalInt right) {
         if (left.isEmpty()) return right.isEmpty() ? 0 : -1;
         return right.isEmpty() ? 1 : Integer.compare(left.getAsInt(), right.getAsInt());
+    }
+
+    private static boolean safeSourceFile(String value) {
+        return !value.isBlank()
+                && !value.equals(".")
+                && !value.equals("..")
+                && value.indexOf('/') < 0
+                && value.indexOf('\\') < 0
+                && value.indexOf('\0') < 0;
     }
 }

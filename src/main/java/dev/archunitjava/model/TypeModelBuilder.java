@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import dev.archunitjava.importer.ParsedMember;
+import dev.archunitjava.importer.ParsedLineNumber;
 
 /** Converts backend-neutral class headers into immutable Java type descriptions. */
 public final class TypeModelBuilder {
@@ -56,6 +57,9 @@ public final class TypeModelBuilder {
             return;
         }
         int flags = parsed.accessFlags();
+        DeclarationLocation location = new DeclarationLocation(
+                ClassResourceLocation.from(parsed.origin(), parsed.precedence()),
+                parsed.sourceFile().flatMap(SourceFileName::fromUntrusted));
         EnumSet<JavaModifier> modifiers = EnumSet.noneOf(JavaModifier.class);
         if (has(flags, ClassFile.ACC_PUBLIC)) modifiers.add(JavaModifier.PUBLIC);
         if (has(flags, ClassFile.ACC_ABSTRACT)) modifiers.add(JavaModifier.ABSTRACT);
@@ -69,12 +73,15 @@ public final class TypeModelBuilder {
                 flags & ~KNOWN_CLASS_FLAGS,
                 new ClassFileVersion(parsed.majorVersion(), parsed.minorVersion()),
                 parsed.resourceName(),
-                parsed.origin(),
                 parsed.precedence(),
-                members(name, parsed.declaredMembers())));
+                location,
+                members(name, parsed.declaredMembers(), location)));
     }
 
-    private static List<JavaMember> members(JavaTypeName owner, List<ParsedMember> parsedMembers) {
+    private static List<JavaMember> members(
+            JavaTypeName owner,
+            List<ParsedMember> parsedMembers,
+            DeclarationLocation location) {
         List<JavaMember> members = new ArrayList<>();
         for (ParsedMember parsed : parsedMembers) {
             JavaMemberKind kind = memberKind(parsed);
@@ -90,9 +97,17 @@ public final class TypeModelBuilder {
                     modifiers,
                     flags,
                     flags & ~knownFlags,
-                    parsed.hasCode()));
+                    parsed.hasCode(),
+                    location,
+                    lineNumbers(parsed.lineNumbers())));
         }
         return List.copyOf(members);
+    }
+
+    private static LineNumberTable lineNumbers(List<ParsedLineNumber> parsedLines) {
+        return new LineNumberTable(parsedLines.stream()
+                .map(line -> new LineNumberEntry(line.bytecodeOffset(), line.lineNumber()))
+                .toList());
     }
 
     private static JavaMemberKind memberKind(ParsedMember parsed) {

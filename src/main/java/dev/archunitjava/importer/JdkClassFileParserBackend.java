@@ -6,6 +6,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassFileElement;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.CompoundElement;
+import java.lang.classfile.Attributes;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,18 +29,33 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 field.fieldType().stringValue(),
                 field.flags().flagsMask(),
                 false)));
-        model.methods().forEach(method -> members.add(new ParsedMember(
-                ParsedMember.Kind.METHOD,
-                method.methodName().stringValue(),
-                method.methodType().stringValue(),
-                method.flags().flagsMask(),
-                method.code().isPresent())));
+        model.methods().forEach(method -> {
+            var code = method.code();
+            List<ParsedLineNumber> lines = code.stream()
+                    .flatMap(value -> value.findAttributes(Attributes.lineNumberTable()).stream())
+                    .flatMap(attribute -> attribute.lineNumbers().stream())
+                    .map(line -> new ParsedLineNumber(line.startPc(), line.lineNumber()))
+                    .sorted()
+                    .toList();
+            members.add(new ParsedMember(
+                    ParsedMember.Kind.METHOD,
+                    method.methodName().stringValue(),
+                    method.methodType().stringValue(),
+                    method.flags().flagsMask(),
+                    code.isPresent(),
+                    lines));
+        });
+        var sourceFile = model.findAttributes(Attributes.sourceFile()).stream()
+                .map(attribute -> attribute.sourceFile().stringValue())
+                .sorted()
+                .findFirst();
         return new ParsedClassHeader(
                 binaryName,
                 model.flags().flagsMask(),
                 model.majorVersion(),
                 model.minorVersion(),
                 model.isModuleInfo(),
+                sourceFile,
                 List.copyOf(members));
     }
 

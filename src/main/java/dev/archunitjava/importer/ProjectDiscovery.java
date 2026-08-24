@@ -310,10 +310,16 @@ public final class ProjectDiscovery {
             Set<OpenOption> options = Set.of(READ, NOFOLLOW_LINKS);
             try (SeekableByteChannel channel = Files.newByteChannel(path, options)) {
                 ByteBuffer buffer = ByteBuffer.allocate((int) attributes.size());
-                while (buffer.hasRemaining() && channel.read(buffer) >= 0) {}
+                while (buffer.hasRemaining()) {
+                    if (channel.read(buffer) < 0) {
+                        diagnostics.add(diagnostic(DiscoveryDiagnosticCode.MALFORMED_METADATA, path,
+                                "error", "changed-during-read"));
+                        return Optional.empty();
+                    }
+                }
                 if (channel.read(ByteBuffer.allocate(1)) >= 0) {
-                    diagnostics.add(diagnostic(DiscoveryDiagnosticCode.METADATA_TOO_LARGE, path,
-                            "bytes", ">" + MAX_METADATA_BYTES));
+                    diagnostics.add(diagnostic(DiscoveryDiagnosticCode.MALFORMED_METADATA, path,
+                            "error", "changed-during-read"));
                     return Optional.empty();
                 }
                 return Optional.of(buffer.array());
@@ -331,6 +337,7 @@ public final class ProjectDiscovery {
         factory.setNamespaceAware(true);
         factory.setXIncludeAware(false);
         factory.setExpandEntityReferences(false);
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
         factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);

@@ -4,6 +4,9 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.List;
+import java.util.Optional;
+import java.util.TreeSet;
 
 /** Immutable declared field, method, constructor, or static initializer. */
 public final class JavaMember implements Comparable<JavaMember> {
@@ -15,6 +18,8 @@ public final class JavaMember implements Comparable<JavaMember> {
     private final boolean hasCode;
     private final DeclarationLocation location;
     private final LineNumberTable lineNumbers;
+    private final List<JavaAnnotationOccurrence> annotations;
+    private final Optional<JavaAnnotationValue> annotationDefault;
 
     JavaMember(
             JavaMemberSignature signature,
@@ -24,7 +29,9 @@ public final class JavaMember implements Comparable<JavaMember> {
             int unrecognizedAccessFlags,
             boolean hasCode,
             DeclarationLocation location,
-            LineNumberTable lineNumbers) {
+            LineNumberTable lineNumbers,
+            List<JavaAnnotationOccurrence> annotations,
+            Optional<JavaAnnotationValue> annotationDefault) {
         this.signature = Objects.requireNonNull(signature, "signature");
         this.kind = Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(modifiers, "modifiers");
@@ -43,6 +50,12 @@ public final class JavaMember implements Comparable<JavaMember> {
         if (!hasCode && !lineNumbers.entries().isEmpty()) {
             throw new IllegalArgumentException("Members without bytecode cannot have line numbers");
         }
+        Objects.requireNonNull(annotations, "annotations");
+        this.annotations = annotations.stream()
+                .map(value -> Objects.requireNonNull(value, "annotation"))
+                .sorted()
+                .toList();
+        this.annotationDefault = Objects.requireNonNull(annotationDefault, "annotationDefault");
     }
 
     public JavaMemberSignature signature() {
@@ -100,6 +113,14 @@ public final class JavaMember implements Comparable<JavaMember> {
                 location.sourceFile(),
                 bytecodeOffset,
                 lineNumbers.lineAt(bytecodeOffset));
+    }
+
+    public List<JavaAnnotationOccurrence> annotations() {
+        return annotations;
+    }
+
+    public Optional<JavaAnnotationValue> annotationDefault() {
+        return annotationDefault;
     }
 
     public JvmType fieldType() {

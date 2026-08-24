@@ -23,6 +23,7 @@ public final class JavaType implements Comparable<JavaType> {
     private final DeclarationLocation location;
     private final Optional<JvmReferenceType> superclass;
     private final List<JvmReferenceType> directInterfaces;
+    private final List<JavaAnnotationOccurrence> annotations;
 
     JavaType(
             JavaTypeName name,
@@ -36,6 +37,7 @@ public final class JavaType implements Comparable<JavaType> {
             DeclarationLocation location,
             Optional<JvmReferenceType> superclass,
             List<JvmReferenceType> directInterfaces,
+            List<JavaAnnotationOccurrence> annotations,
             List<JavaMember> declaredMembers) {
         this.name = Objects.requireNonNull(name, "name");
         this.owner = new TypeOwner(name.packageName());
@@ -62,6 +64,11 @@ public final class JavaType implements Comparable<JavaType> {
             seenInterfaces.add(Objects.requireNonNull(directInterface, "directInterface").binaryName());
         }
         this.directInterfaces = seenInterfaces.stream().map(JvmReferenceType::new).toList();
+        Objects.requireNonNull(annotations, "annotations");
+        this.annotations = annotations.stream()
+                .map(value -> Objects.requireNonNull(value, "annotation"))
+                .sorted()
+                .toList();
         Objects.requireNonNull(declaredMembers, "declaredMembers");
         TreeSet<JavaMember> sortedMembers = new TreeSet<>();
         for (JavaMember member : declaredMembers) {
@@ -137,6 +144,10 @@ public final class JavaType implements Comparable<JavaType> {
 
     public List<JvmReferenceType> directInterfaces() {
         return directInterfaces;
+    }
+
+    public List<JavaAnnotationOccurrence> annotations() {
+        return annotations;
     }
 
     @Override

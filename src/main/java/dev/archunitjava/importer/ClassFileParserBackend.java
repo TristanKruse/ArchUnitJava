@@ -13,7 +13,9 @@ interface ClassFileParserBackend {
             java.util.Optional<String> superclassBinaryName,
             java.util.List<String> interfaceBinaryNames,
             java.util.Optional<String> sourceFile,
-            java.util.List<ParsedMember> declaredMembers) {}
+            java.util.List<ParsedMember> declaredMembers,
+            java.util.List<ParsedAnnotationOccurrence> annotations,
+            java.util.List<ParsedAnnotationDefault> annotationDefaults) {}
 
     @FunctionalInterface
     interface TraversalObserver {

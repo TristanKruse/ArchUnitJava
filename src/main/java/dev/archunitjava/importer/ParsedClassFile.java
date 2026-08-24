@@ -17,7 +17,9 @@ public record ParsedClassFile(
         java.util.Optional<String> superclassBinaryName,
         List<String> interfaceBinaryNames,
         java.util.Optional<String> sourceFile,
-        List<ParsedMember> declaredMembers)
+        List<ParsedMember> declaredMembers,
+        List<ParsedAnnotationOccurrence> annotations,
+        List<ParsedAnnotationDefault> annotationDefaults)
         implements Comparable<ParsedClassFile> {
     public ParsedClassFile {
         if (binaryName == null || binaryName.isBlank()) {
@@ -50,6 +52,8 @@ public record ParsedClassFile(
             sortedMembers.add(Objects.requireNonNull(member, "declaredMember"));
         }
         declaredMembers = List.copyOf(sortedMembers);
+        annotations = sortedCopy(annotations, "annotation");
+        annotationDefaults = sortedCopy(annotationDefaults, "annotationDefault");
     }
 
     public ParsedClassFile(
@@ -73,6 +77,8 @@ public record ParsedClassFile(
                 java.util.Optional.empty(),
                 List.of(),
                 java.util.Optional.empty(),
+                List.of(),
+                List.of(),
                 List.of());
     }
 
@@ -99,7 +105,48 @@ public record ParsedClassFile(
                 java.util.Optional.empty(),
                 List.of(),
                 sourceFile,
-                declaredMembers);
+                declaredMembers,
+                List.of(),
+                List.of());
+    }
+
+    public ParsedClassFile(
+            String binaryName,
+            int accessFlags,
+            int majorVersion,
+            int minorVersion,
+            boolean moduleDescriptor,
+            String resourceName,
+            ClassFileOrigin origin,
+            int precedence,
+            java.util.Optional<String> superclassBinaryName,
+            List<String> interfaceBinaryNames,
+            java.util.Optional<String> sourceFile,
+            List<ParsedMember> declaredMembers) {
+        this(
+                binaryName,
+                accessFlags,
+                majorVersion,
+                minorVersion,
+                moduleDescriptor,
+                resourceName,
+                origin,
+                precedence,
+                superclassBinaryName,
+                interfaceBinaryNames,
+                sourceFile,
+                declaredMembers,
+                List.of(),
+                List.of());
+    }
+
+    private static <T extends Comparable<? super T>> List<T> sortedCopy(
+            List<T> values, String name) {
+        Objects.requireNonNull(values, name + "s");
+        return values.stream()
+                .map(value -> Objects.requireNonNull(value, name))
+                .sorted()
+                .toList();
     }
 
     private static String requireBinaryName(String value, String role) {

@@ -10,6 +10,13 @@ import java.util.Map;
 import java.util.Objects;
 import dev.archunitjava.importer.ParsedMember;
 import dev.archunitjava.importer.ParsedLineNumber;
+import dev.archunitjava.importer.ParsedAnnotation;
+import dev.archunitjava.importer.ParsedAnnotationDefault;
+import dev.archunitjava.importer.ParsedAnnotationElement;
+import dev.archunitjava.importer.ParsedAnnotationOccurrence;
+import dev.archunitjava.importer.ParsedAnnotationValue;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 /** Converts backend-neutral class headers into immutable Java type descriptions. */
 public final class TypeModelBuilder {
@@ -81,12 +88,20 @@ public final class TypeModelBuilder {
                 location,
                 superclass,
                 parsed.interfaceBinaryNames().stream().map(JvmReferenceType::new).toList(),
-                members(name, parsed.declaredMembers(), location)));
+                typeAnnotations(name, parsed.annotations()),
+                members(
+                        name,
+                        parsed.declaredMembers(),
+                        parsed.annotations(),
+                        parsed.annotationDefaults(),
+                        location)));
     }
 
     private static List<JavaMember> members(
             JavaTypeName owner,
             List<ParsedMember> parsedMembers,
+            List<ParsedAnnotationOccurrence> parsedAnnotations,
+            List<ParsedAnnotationDefault> parsedDefaults,
             DeclarationLocation location) {
         List<JavaMember> members = new ArrayList<>();
         for (ParsedMember parsed : parsedMembers) {
@@ -97,17 +112,133 @@ public final class TypeModelBuilder {
             int knownFlags = parsed.kind() == ParsedMember.Kind.FIELD
                     ? fieldFlags()
                     : methodFlags();
+            JavaMemberSignature signature = new JavaMemberSignature(
+                    owner, parsed.name(), parsed.descriptor());
             members.add(new JavaMember(
-                    new JavaMemberSignature(owner, parsed.name(), parsed.descriptor()),
+                    signature,
                     kind,
                     modifiers,
                     flags,
                     flags & ~knownFlags,
                     parsed.hasCode(),
                     location,
-                    lineNumbers(parsed.lineNumbers())));
+                    lineNumbers(parsed.lineNumbers()),
+                    memberAnnotations(signature, kind, parsedAnnotations),
+                    annotationDefault(parsed, parsedDefaults)));
         }
         return List.copyOf(members);
+    }
+
+    private static List<JavaAnnotationOccurrence> typeAnnotations(
+            JavaTypeName owner, List<ParsedAnnotationOccurrence> annotations) {
+        return annotations.stream()
+                .filter(annotation -> annotation.container() == ParsedAnnotationOccurrence.Container.TYPE
+                        || annotation.container() == ParsedAnnotationOccurrence.Container.RECORD_COMPONENT)
+                .map(annotation -> annotationOccurrence(annotation, owner.binaryName(), null))
+                .sorted()
+                .toList();
+    }
+
+    private static List<JavaAnnotationOccurrence> memberAnnotations(
+            JavaMemberSignature signature,
+            JavaMemberKind memberKind,
+            List<ParsedAnnotationOccurrence> annotations) {
+        ParsedAnnotationOccurrence.Container expected = memberKind == JavaMemberKind.FIELD
+                ? ParsedAnnotationOccurrence.Container.FIELD
+                : ParsedAnnotationOccurrence.Container.METHOD;
+        return annotations.stream()
+                .filter(annotation -> annotation.container() == expected)
+                .filter(annotation -> annotation.ownerName().equals(signature.name())
+                        && annotation.ownerDescriptor().equals(signature.descriptor()))
+                .map(annotation -> annotationOccurrence(annotation, signature.stableKey(), memberKind))
+                .sorted()
+                .toList();
+    }
+
+    private static Optional<JavaAnnotationValue> annotationDefault(
+            ParsedMember member, List<ParsedAnnotationDefault> defaults) {
+        List<JavaAnnotationValue> values = defaults.stream()
+                .filter(value -> value.methodName().equals(member.name())
+                        && value.methodDescriptor().equals(member.descriptor()))
+                .map(value -> annotationValue(value.value()))
+                .distinct()
+                .toList();
+        if (values.size() > 1) {
+            throw new IllegalArgumentException(
+                    "Conflicting annotation defaults for " + member.name() + member.descriptor());
+        }
+        return values.stream().findFirst();
+    }
+
+    private static JavaAnnotationOccurrence annotationOccurrence(
+            ParsedAnnotationOccurrence parsed,
+            String ownerKey,
+            JavaMemberKind memberKind) {
+        AnnotationSiteKind siteKind;
+        if (parsed.site() == ParsedAnnotationOccurrence.Site.TYPE_USE) {
+            siteKind = AnnotationSiteKind.TYPE_USE;
+        } else if (parsed.site() == ParsedAnnotationOccurrence.Site.PARAMETER) {
+            siteKind = AnnotationSiteKind.PARAMETER;
+        } else {
+            siteKind = switch (parsed.container()) {
+                case TYPE -> AnnotationSiteKind.TYPE_DECLARATION;
+                case FIELD -> AnnotationSiteKind.FIELD_DECLARATION;
+                case METHOD -> memberKind == JavaMemberKind.CONSTRUCTOR
+                        ? AnnotationSiteKind.CONSTRUCTOR_DECLARATION
+                        : AnnotationSiteKind.METHOD_DECLARATION;
+                case RECORD_COMPONENT -> AnnotationSiteKind.RECORD_COMPONENT;
+            };
+        }
+        String actualOwner = parsed.container() == ParsedAnnotationOccurrence.Container.RECORD_COMPONENT
+                ? ownerKey + "#record:" + parsed.ownerName() + parsed.ownerDescriptor()
+                : ownerKey;
+        Optional<JavaTypeUseTarget> target = parsed.typeUseTarget().map(value ->
+                new JavaTypeUseTarget(value.targetType(), value.targetInfo(), value.path()));
+        return new JavaAnnotationOccurrence(
+                AnnotationVisibility.valueOf(parsed.visibility().name()),
+                new AnnotationSite(siteKind, actualOwner, parsed.parameterIndex(), target),
+                annotation(parsed.annotation()));
+    }
+
+    private static JavaAnnotation annotation(ParsedAnnotation parsed) {
+        JvmType parsedType = JvmDescriptors.parseField(parsed.typeDescriptor());
+        if (!(parsedType instanceof JvmReferenceType annotationType)) {
+            throw new IllegalArgumentException("Annotation type must be a reference descriptor");
+        }
+        return new JavaAnnotation(
+                annotationType,
+                parsed.elements().stream()
+                        .map(TypeModelBuilder::annotationElement)
+                        .toList());
+    }
+
+    private static JavaAnnotationElement annotationElement(ParsedAnnotationElement parsed) {
+        return new JavaAnnotationElement(parsed.name(), annotationValue(parsed.value()));
+    }
+
+    private static JavaAnnotationValue annotationValue(ParsedAnnotationValue parsed) {
+        if (parsed instanceof ParsedAnnotationValue.ScalarValue value) {
+            return new JavaAnnotationValue.ScalarValue(
+                    JavaAnnotationValue.ScalarKind.valueOf(value.kind().name()), value.encodedValue());
+        }
+        if (parsed instanceof ParsedAnnotationValue.EnumValue value) {
+            JvmType enumType = JvmDescriptors.parseField(value.typeDescriptor());
+            if (!(enumType instanceof JvmReferenceType referenceType)) {
+                throw new IllegalArgumentException("Annotation enum type must be a reference descriptor");
+            }
+            return new JavaAnnotationValue.EnumValue(referenceType, value.constantName());
+        }
+        if (parsed instanceof ParsedAnnotationValue.ClassValue value) {
+            return new JavaAnnotationValue.ClassValue(value.descriptor());
+        }
+        if (parsed instanceof ParsedAnnotationValue.NestedAnnotationValue value) {
+            return new JavaAnnotationValue.NestedAnnotationValue(annotation(value.annotation()));
+        }
+        if (parsed instanceof ParsedAnnotationValue.ArrayValue value) {
+            return new JavaAnnotationValue.ArrayValue(
+                    value.values().stream().map(TypeModelBuilder::annotationValue).toList());
+        }
+        throw new IllegalArgumentException("Unsupported parsed annotation value: " + parsed.getClass());
     }
 
     private static LineNumberTable lineNumbers(List<ParsedLineNumber> parsedLines) {

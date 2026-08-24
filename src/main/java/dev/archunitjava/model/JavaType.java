@@ -24,6 +24,7 @@ public final class JavaType implements Comparable<JavaType> {
     private final Optional<JvmReferenceType> superclass;
     private final List<JvmReferenceType> directInterfaces;
     private final List<JavaAnnotationOccurrence> annotations;
+    private final GenericClassView genericView;
 
     JavaType(
             JavaTypeName name,
@@ -38,6 +39,7 @@ public final class JavaType implements Comparable<JavaType> {
             Optional<JvmReferenceType> superclass,
             List<JvmReferenceType> directInterfaces,
             List<JavaAnnotationOccurrence> annotations,
+            GenericClassView genericView,
             List<JavaMember> declaredMembers) {
         this.name = Objects.requireNonNull(name, "name");
         this.owner = new TypeOwner(name.packageName());
@@ -69,6 +71,11 @@ public final class JavaType implements Comparable<JavaType> {
                 .map(value -> Objects.requireNonNull(value, "annotation"))
                 .sorted()
                 .toList();
+        this.genericView = Objects.requireNonNull(genericView, "genericView");
+        if (!this.superclass.equals(genericView.erasedSuperclass())
+                || !this.directInterfaces.equals(genericView.erasedInterfaces())) {
+            throw new IllegalArgumentException("Generic view must retain the erased hierarchy");
+        }
         Objects.requireNonNull(declaredMembers, "declaredMembers");
         TreeSet<JavaMember> sortedMembers = new TreeSet<>();
         for (JavaMember member : declaredMembers) {
@@ -148,6 +155,10 @@ public final class JavaType implements Comparable<JavaType> {
 
     public List<JavaAnnotationOccurrence> annotations() {
         return annotations;
+    }
+
+    public GenericClassView genericView() {
+        return genericView;
     }
 
     @Override

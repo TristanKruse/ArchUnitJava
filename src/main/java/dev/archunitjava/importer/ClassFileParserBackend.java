@@ -15,7 +15,8 @@ interface ClassFileParserBackend {
             java.util.Optional<String> sourceFile,
             java.util.List<ParsedMember> declaredMembers,
             java.util.List<ParsedAnnotationOccurrence> annotations,
-            java.util.List<ParsedAnnotationDefault> annotationDefaults) {}
+            java.util.List<ParsedAnnotationDefault> annotationDefaults,
+            java.util.Optional<String> genericSignature) {}
 
     @FunctionalInterface
     interface TraversalObserver {

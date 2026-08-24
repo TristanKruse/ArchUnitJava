@@ -40,7 +40,13 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
             String name = field.fieldName().stringValue();
             String descriptor = field.fieldType().stringValue();
             members.add(new ParsedMember(
-                    ParsedMember.Kind.FIELD, name, descriptor, field.flags().flagsMask(), false));
+                    ParsedMember.Kind.FIELD,
+                    name,
+                    descriptor,
+                    field.flags().flagsMask(),
+                    false,
+                    List.of(),
+                    signature(field)));
             addDeclarationAnnotations(
                     field, ParsedAnnotationOccurrence.Container.FIELD, name, descriptor, annotations);
             addTypeAnnotations(
@@ -67,7 +73,8 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                     descriptor,
                     method.flags().flagsMask(),
                     code.isPresent(),
-                    lines));
+                    lines,
+                    signature(method)));
             addDeclarationAnnotations(
                     method, ParsedAnnotationOccurrence.Container.METHOD, name, descriptor, annotations);
             addParameterAnnotations(method, name, descriptor, annotations);
@@ -129,7 +136,15 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 sourceFile,
                 List.copyOf(members),
                 List.copyOf(annotations),
-                List.copyOf(annotationDefaults));
+                List.copyOf(annotationDefaults),
+                signature(model));
+    }
+
+    private static Optional<String> signature(AttributedElement element) {
+        return element.findAttributes(Attributes.signature()).stream()
+                .map(attribute -> attribute.signature().stringValue())
+                .sorted()
+                .findFirst();
     }
 
     private static void addDeclarationAnnotations(

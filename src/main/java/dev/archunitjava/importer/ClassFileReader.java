@@ -87,7 +87,8 @@ public final class ClassFileReader {
                     header.sourceFile(),
                     header.declaredMembers(),
                     header.annotations(),
-                    header.annotationDefaults()));
+                    header.annotationDefaults(),
+                    header.genericSignature()));
         } catch (RuntimeException failure) {
             diagnostics.add(failure(resource, ClassFileDiagnosticCode.MALFORMED_CLASS_FILE,
                     tracker.phase, failure));

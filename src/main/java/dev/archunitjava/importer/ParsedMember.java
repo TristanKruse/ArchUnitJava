@@ -7,7 +7,8 @@ public record ParsedMember(
         String descriptor,
         int accessFlags,
         boolean hasCode,
-        java.util.List<ParsedLineNumber> lineNumbers)
+        java.util.List<ParsedLineNumber> lineNumbers,
+        java.util.Optional<String> genericSignature)
         implements Comparable<ParsedMember> {
     public enum Kind {
         FIELD,
@@ -34,11 +35,40 @@ public record ParsedMember(
         if (!hasCode && !lineNumbers.isEmpty()) {
             throw new IllegalArgumentException("members without bytecode cannot have line numbers");
         }
+        java.util.Objects.requireNonNull(genericSignature, "genericSignature");
+        genericSignature = genericSignature.map(value -> {
+            if (value.isBlank()) throw new IllegalArgumentException("genericSignature must not be blank");
+            return value;
+        });
     }
 
     public ParsedMember(
             Kind kind, String name, String descriptor, int accessFlags, boolean hasCode) {
-        this(kind, name, descriptor, accessFlags, hasCode, java.util.List.of());
+        this(
+                kind,
+                name,
+                descriptor,
+                accessFlags,
+                hasCode,
+                java.util.List.of(),
+                java.util.Optional.empty());
+    }
+
+    public ParsedMember(
+            Kind kind,
+            String name,
+            String descriptor,
+            int accessFlags,
+            boolean hasCode,
+            java.util.List<ParsedLineNumber> lineNumbers) {
+        this(
+                kind,
+                name,
+                descriptor,
+                accessFlags,
+                hasCode,
+                lineNumbers,
+                java.util.Optional.empty());
     }
 
     @Override

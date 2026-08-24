@@ -76,6 +76,9 @@ public final class TypeModelBuilder {
         var superclass = typeKind == JavaTypeKind.INTERFACE || typeKind == JavaTypeKind.ANNOTATION
                 ? java.util.Optional.<JvmReferenceType>empty()
                 : parsed.superclassBinaryName().map(JvmReferenceType::new);
+        List<JvmReferenceType> interfaces = parsed.interfaceBinaryNames().stream()
+                .map(JvmReferenceType::new)
+                .toList();
         types.add(new JavaType(
                 name,
                 typeKind,
@@ -87,8 +90,9 @@ public final class TypeModelBuilder {
                 parsed.precedence(),
                 location,
                 superclass,
-                parsed.interfaceBinaryNames().stream().map(JvmReferenceType::new).toList(),
+                interfaces,
                 typeAnnotations(name, parsed.annotations()),
+                GenericClassView.create(superclass, interfaces, parsed.genericSignature()),
                 members(
                         name,
                         parsed.declaredMembers(),
@@ -114,6 +118,16 @@ public final class TypeModelBuilder {
                     : methodFlags();
             JavaMemberSignature signature = new JavaMemberSignature(
                     owner, parsed.name(), parsed.descriptor());
+            Optional<GenericFieldView> genericFieldView = kind == JavaMemberKind.FIELD
+                    ? Optional.of(GenericFieldView.create(
+                            JvmDescriptors.parseField(parsed.descriptor()),
+                            parsed.genericSignature()))
+                    : Optional.empty();
+            Optional<GenericMethodView> genericMethodView = kind == JavaMemberKind.FIELD
+                    ? Optional.empty()
+                    : Optional.of(GenericMethodView.create(
+                            JvmDescriptors.parseMethod(parsed.descriptor()),
+                            parsed.genericSignature()));
             members.add(new JavaMember(
                     signature,
                     kind,
@@ -124,7 +138,9 @@ public final class TypeModelBuilder {
                     location,
                     lineNumbers(parsed.lineNumbers()),
                     memberAnnotations(signature, kind, parsedAnnotations),
-                    annotationDefault(parsed, parsedDefaults)));
+                    annotationDefault(parsed, parsedDefaults),
+                    genericFieldView,
+                    genericMethodView));
         }
         return List.copyOf(members);
     }

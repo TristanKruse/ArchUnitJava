@@ -52,9 +52,22 @@ final class GraphKernelContractTest {
         assertThrows(IllegalArgumentException.class, () -> ModuleId.named(null));
         assertThrows(IllegalArgumentException.class, () -> LocationId.ofResourcePath(null));
         assertThrows(IllegalArgumentException.class, () -> MemberId.of(type, "", "I"));
-        assertThrows(IllegalArgumentException.class, () -> MemberId.of(type, "bad name", "I"));
+        assertThrows(IllegalArgumentException.class, () -> MemberId.of(type, "bad/name", "I"));
+        assertThrows(IllegalArgumentException.class, () -> MemberId.of(type, "bad.name", "I"));
+        assertThrows(IllegalArgumentException.class, () -> MemberId.of(type, "bad;name", "I"));
+        assertThrows(IllegalArgumentException.class, () -> MemberId.of(type, "bad[name", "I"));
+        assertThrows(IllegalArgumentException.class, () -> MemberId.of(type, "<bad>", "()V"));
         assertThrows(IllegalArgumentException.class, () -> MemberId.of(type, "value", ""));
         assertThrows(IllegalArgumentException.class, () -> MemberId.of(type, "value", "bad descriptor"));
+        assertThrows(IllegalArgumentException.class, () -> MemberId.of(type, "value", "Lfoo//Bar;"));
+
+        // JVMS 4.2.1-4.2.2 deliberately permits more than Java source identifiers.
+        MemberId unusualField = MemberId.of(type, "field with space", "Lfoo/has space;");
+        MemberId unusualMethod = MemberId.of(type, "method with space", "(Lfoo/<bar>;)V");
+        MemberId angleBracketField = MemberId.of(type, "<field>", "I");
+        assertEquals("field with space", unusualField.name());
+        assertEquals("(Lfoo/<bar>;)V", unusualMethod.descriptor());
+        assertEquals("<field>", angleBracketField.name());
     }
 
     @Test

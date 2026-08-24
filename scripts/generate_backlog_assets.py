@@ -76,7 +76,7 @@ ITEMS = (
          ("pom.xml", "mvnw", "mvnw.cmd", ".mvn/**", ".github/workflows/ci.yml", "src/main/java/dev/archunitjava/ArchUnitJava.java", "src/test/java/dev/archunitjava/ArchUnitJavaTest.java"), "foundation", kind="infrastructure", initially_completed=True),
     item(2, "graph-kernel", "Foundation: deterministic Java dependency-graph kernel",
          "Implement stable identifiers, dependency kinds, evidence, nodes, edges, and an immutable deterministic graph.", (1,),
-         ("Package, type, member, module, and location identifiers reject invalid or ambiguous values.", "Parallel edges merge evidence without duplicates and all iteration is stable.", "Graph construction rejects unknown endpoints and preserves isolated nodes."), MAIN, "foundation", contract_ready=True),
+         ("Package, type, module, and location identifiers use documented Java forms; member names and descriptors obey JVMS 4.2-4.3 without rejecting legal non-Java unqualified names.", "Parallel edges merge evidence without duplicates and all iteration is stable.", "Graph construction rejects unknown endpoints and preserves isolated nodes."), MAIN, "foundation", contract_ready=True),
     item(3, "patterns", "Foundation: Java-aware glob, regex, and qualified-name patterns",
          "Compile user patterns once and match paths, packages, binary names, and source-style type names with explicit semantics.", (1,),
          ("Path and qualified-name separators have distinct documented glob rules.", "Regex and exact patterns share immutable matcher descriptions.", "Malformed patterns fail as user errors before analysis starts."), MAIN, "foundation"),
@@ -392,6 +392,10 @@ def _default_non_goals(entry: Item) -> tuple[str, ...]:
     ]
     if "pom.xml" not in entry.allowed_paths:
         values.append("Do not add dependencies or change Maven configuration.")
+    if entry.number == 2:
+        values.append(
+            "Do not build the reusable typed JVM descriptor vocabulary reserved for issue #11; validate identity grammar only."
+        )
     return tuple(values)
 
 

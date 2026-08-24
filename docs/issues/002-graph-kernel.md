@@ -4,7 +4,7 @@ Implement stable identifiers, dependency kinds, evidence, nodes, edges, and an i
 
 ## Acceptance criteria
 
-- Package, type, member, module, and location identifiers reject invalid or ambiguous values.
+- Package, type, module, and location identifiers use documented Java forms; member names and descriptors obey JVMS 4.2-4.3 without rejecting legal non-Java unqualified names.
 - Parallel edges merge evidence without duplicates and all iteration is stable.
 - Graph construction rejects unknown endpoints and preserves isolated nodes.
 
@@ -14,6 +14,7 @@ Implement stable identifiers, dependency kinds, evidence, nodes, edges, and an i
 - Do not load or execute target classes, builds, plugins, annotation processors, or code.
 - Do not copy implementation code from the upstream ArchUnit project.
 - Do not add dependencies or change Maven configuration.
+- Do not build the reusable typed JVM descriptor vocabulary reserved for issue #11; validate identity grammar only.
 
 ## Workflow
 

@@ -40,7 +40,8 @@ public final class ClassPathAssembler {
         List<ClassFileInput> effectiveInputs = options.followManifestClassPath()
                 ? expandManifestClassPath(inputs, diagnostics)
                 : List.copyOf(inputs);
-        InputEnumerationResult enumerated = new ClassFileInputEnumerator(options.enumerationOptions())
+        InputEnumerationResult enumerated = new ClassFileInputEnumerator(
+                        options.enumerationOptions(), options.importOptions())
                 .enumerate(effectiveInputs);
         diagnostics.addAll(enumerated.diagnostics());
         TreeMap<String, List<Candidate>> groups = new TreeMap<>();

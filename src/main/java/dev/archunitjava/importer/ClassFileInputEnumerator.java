@@ -21,13 +21,24 @@ import java.util.zip.ZipFile;
 /** Enumerates class resources without loading target classes or following symbolic links. */
 public final class ClassFileInputEnumerator {
     private final InputEnumerationOptions options;
+    private final ImportOptions importOptions;
 
     public ClassFileInputEnumerator() {
-        this(InputEnumerationOptions.defaults());
+        this(InputEnumerationOptions.defaults(), ImportOptions.defaults());
     }
 
     public ClassFileInputEnumerator(InputEnumerationOptions options) {
+        this(options, ImportOptions.defaults());
+    }
+
+    public ClassFileInputEnumerator(ImportOptions importOptions) {
+        this(InputEnumerationOptions.defaults(), importOptions);
+    }
+
+    public ClassFileInputEnumerator(
+            InputEnumerationOptions options, ImportOptions importOptions) {
         this.options = Objects.requireNonNull(options, "options");
+        this.importOptions = Objects.requireNonNull(importOptions, "importOptions");
     }
 
     public InputEnumerationResult enumerate(List<ClassFileInput> inputs) {
@@ -109,6 +120,7 @@ public final class ClassFileInputEnumerator {
             return;
         }
         candidates = candidates.stream().sorted().toList();
+        List<ImportResourceRule> importRules = directoryRules(root, diagnostics);
         Set<String> names = new HashSet<>();
         int count = 0;
         for (Path candidate : candidates) {
@@ -127,6 +139,7 @@ public final class ClassFileInputEnumerator {
                 diagnostics.add(diagnostic(InputDiagnosticCode.INVALID_RESOURCE_NAME, candidate.toString()));
                 continue;
             }
+            if (!included(name, root.toString(), importRules, diagnostics)) continue;
             if (!names.add(name)) {
                 diagnostics.add(diagnostic(InputDiagnosticCode.DUPLICATE_RESOURCE, root.toString(), "entry", name));
                 continue;
@@ -153,6 +166,7 @@ public final class ClassFileInputEnumerator {
         }
         Set<String> names = new HashSet<>();
         try (ZipFile zip = new ZipFile(jar.toFile())) {
+            List<ImportResourceRule> importRules = archiveRules(jar, zip, diagnostics);
             int entries = 0;
             int classes = 0;
             var enumeration = zip.entries();
@@ -173,6 +187,7 @@ public final class ClassFileInputEnumerator {
                     continue;
                 }
                 String name = normalizeEntry(archiveName);
+                if (!included(name, jar.toString(), importRules, diagnostics)) continue;
                 if (!names.add(name)) {
                     diagnostics.add(diagnostic(InputDiagnosticCode.DUPLICATE_RESOURCE, jar.toString(), "entry", name));
                     continue;
@@ -271,6 +286,112 @@ public final class ClassFileInputEnumerator {
                 }
             }
         };
+    }
+
+    private List<ImportResourceRule> directoryRules(
+            Path root, List<InputDiagnostic> diagnostics) {
+        if (!importOptions.readArchIgnore()) return importOptions.rules();
+        Path ignore = root.resolve(".archignore");
+        if (!Files.exists(ignore, LinkOption.NOFOLLOW_LINKS)) return importOptions.rules();
+        if (Files.isSymbolicLink(ignore)) {
+            diagnostics.add(diagnostic(InputDiagnosticCode.SYMLINK_SKIPPED, ignore.toString()));
+            return importOptions.rules();
+        }
+        if (!Files.isRegularFile(ignore, LinkOption.NOFOLLOW_LINKS)) {
+            diagnostics.add(diagnostic(
+                    InputDiagnosticCode.INVALID_IGNORE_RULE,
+                    ignore.toString(),
+                    "reason",
+                    "not-regular-file"));
+            return importOptions.rules();
+        }
+        try (InputStream input = Files.newInputStream(
+                ignore, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
+            byte[] bytes = input.readNBytes(importOptions.maximumIgnoreBytes() + 1);
+            return parsedRules(bytes, ignore.toString(), diagnostics);
+        } catch (IOException | SecurityException failure) {
+            diagnostics.add(diagnostic(
+                    InputDiagnosticCode.IO_FAILURE,
+                    ignore.toString(),
+                    "operation",
+                    "archignore-read"));
+            return importOptions.rules();
+        }
+    }
+
+    private List<ImportResourceRule> archiveRules(
+            Path jar, ZipFile zip, List<InputDiagnostic> diagnostics) {
+        if (!importOptions.readArchIgnore()) return importOptions.rules();
+        ZipEntry entry = zip.getEntry(".archignore");
+        if (entry == null || entry.isDirectory()) return importOptions.rules();
+        String source = jar + "!/.archignore";
+        if (entry.getSize() > importOptions.maximumIgnoreBytes()) {
+            diagnostics.add(new InputDiagnostic(
+                    InputDiagnosticCode.RESOURCE_LIMIT_EXCEEDED,
+                    source,
+                    Map.of("limit", "archignore-bytes:" + importOptions.maximumIgnoreBytes())));
+            return importOptions.rules();
+        }
+        try (InputStream input = zip.getInputStream(entry)) {
+            byte[] bytes = input.readNBytes(importOptions.maximumIgnoreBytes() + 1);
+            return parsedRules(bytes, source, diagnostics);
+        } catch (IOException | SecurityException failure) {
+            diagnostics.add(diagnostic(
+                    InputDiagnosticCode.IO_FAILURE, source, "operation", "archignore-read"));
+            return importOptions.rules();
+        }
+    }
+
+    private List<ImportResourceRule> parsedRules(
+            byte[] bytes, String source, List<InputDiagnostic> diagnostics) {
+        if (bytes.length > importOptions.maximumIgnoreBytes()) {
+            diagnostics.add(new InputDiagnostic(
+                    InputDiagnosticCode.RESOURCE_LIMIT_EXCEEDED,
+                    source,
+                    Map.of("limit", "archignore-bytes:" + importOptions.maximumIgnoreBytes())));
+            return importOptions.rules();
+        }
+        ArchIgnoreRules.ParseResult parsed =
+                ArchIgnoreRules.parse(bytes, source, importOptions.maximumIgnoreLines());
+        diagnostics.addAll(parsed.diagnostics());
+        List<ImportResourceRule> combined = new ArrayList<>(parsed.rules());
+        combined.addAll(importOptions.rules());
+        return List.copyOf(combined);
+    }
+
+    private boolean included(
+            String resource,
+            String input,
+            List<ImportResourceRule> rules,
+            List<InputDiagnostic> diagnostics) {
+        if (!importOptions.scope().includes(resource)) {
+            diagnostics.add(new InputDiagnostic(
+                    InputDiagnosticCode.RESOURCE_EXCLUDED,
+                    input,
+                    Map.of(
+                            "entry", resource,
+                            "rule", "scope:" + importOptions.scope().name(),
+                            "source", "scope")));
+            return false;
+        }
+        ImportResourceRule winner = null;
+        ImportRuleAction action = ImportRuleAction.INCLUDE;
+        for (ImportResourceRule rule : rules) {
+            if (rule.matches(resource)) {
+                winner = rule;
+                action = rule.action();
+            }
+        }
+        if (action == ImportRuleAction.INCLUDE) return true;
+        diagnostics.add(new InputDiagnostic(
+                InputDiagnosticCode.RESOURCE_EXCLUDED,
+                input,
+                Map.of(
+                        "entry", resource,
+                        "line", Integer.toString(winner.line()),
+                        "rule", winner.description(),
+                        "source", winner.source())));
+        return false;
     }
 
     private static boolean isJar(Path path) {

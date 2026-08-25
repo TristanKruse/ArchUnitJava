@@ -22,6 +22,7 @@ public final class JavaMember implements Comparable<JavaMember> {
     private final Optional<JavaAnnotationValue> annotationDefault;
     private final Optional<GenericFieldView> genericFieldView;
     private final Optional<GenericMethodView> genericMethodView;
+    private final List<JavaCodeAccess> codeAccesses;
 
     JavaMember(
             JavaMemberSignature signature,
@@ -35,7 +36,8 @@ public final class JavaMember implements Comparable<JavaMember> {
             List<JavaAnnotationOccurrence> annotations,
             Optional<JavaAnnotationValue> annotationDefault,
             Optional<GenericFieldView> genericFieldView,
-            Optional<GenericMethodView> genericMethodView) {
+            Optional<GenericMethodView> genericMethodView,
+            List<JavaCodeAccess> codeAccesses) {
         this.signature = Objects.requireNonNull(signature, "signature");
         this.kind = Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(modifiers, "modifiers");
@@ -65,6 +67,17 @@ public final class JavaMember implements Comparable<JavaMember> {
         if ((kind == JavaMemberKind.FIELD) != genericFieldView.isPresent()
                 || (kind != JavaMemberKind.FIELD) != genericMethodView.isPresent()) {
             throw new IllegalArgumentException("Generic view must match the member kind");
+        }
+        Objects.requireNonNull(codeAccesses, "codeAccesses");
+        this.codeAccesses = codeAccesses.stream()
+                .map(value -> Objects.requireNonNull(value, "codeAccess"))
+                .sorted()
+                .toList();
+        if (!hasCode && !this.codeAccesses.isEmpty()) {
+            throw new IllegalArgumentException("Members without bytecode cannot have code accesses");
+        }
+        if (this.codeAccesses.stream().anyMatch(access -> !access.caller().equals(signature))) {
+            throw new IllegalArgumentException("Code access caller must match its declaring member");
         }
     }
 
@@ -159,6 +172,10 @@ public final class JavaMember implements Comparable<JavaMember> {
             throw new IllegalStateException("Fields do not have a generic method view");
         }
         return genericMethodView.orElseThrow();
+    }
+
+    public List<JavaCodeAccess> codeAccesses() {
+        return codeAccesses;
     }
 
     @Override

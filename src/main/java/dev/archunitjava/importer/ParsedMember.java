@@ -8,7 +8,8 @@ public record ParsedMember(
         int accessFlags,
         boolean hasCode,
         java.util.List<ParsedLineNumber> lineNumbers,
-        java.util.Optional<String> genericSignature)
+        java.util.Optional<String> genericSignature,
+        java.util.List<ParsedCodeAccess> codeAccesses)
         implements Comparable<ParsedMember> {
     public enum Kind {
         FIELD,
@@ -40,6 +41,14 @@ public record ParsedMember(
             if (value.isBlank()) throw new IllegalArgumentException("genericSignature must not be blank");
             return value;
         });
+        if (codeAccesses == null) throw new NullPointerException("codeAccesses");
+        codeAccesses = codeAccesses.stream()
+                .map(value -> java.util.Objects.requireNonNull(value, "codeAccess"))
+                .sorted()
+                .toList();
+        if (!hasCode && !codeAccesses.isEmpty()) {
+            throw new IllegalArgumentException("members without bytecode cannot have code accesses");
+        }
     }
 
     public ParsedMember(
@@ -51,7 +60,8 @@ public record ParsedMember(
                 accessFlags,
                 hasCode,
                 java.util.List.of(),
-                java.util.Optional.empty());
+                java.util.Optional.empty(),
+                java.util.List.of());
     }
 
     public ParsedMember(
@@ -68,7 +78,27 @@ public record ParsedMember(
                 accessFlags,
                 hasCode,
                 lineNumbers,
-                java.util.Optional.empty());
+                java.util.Optional.empty(),
+                java.util.List.of());
+    }
+
+    public ParsedMember(
+            Kind kind,
+            String name,
+            String descriptor,
+            int accessFlags,
+            boolean hasCode,
+            java.util.List<ParsedLineNumber> lineNumbers,
+            java.util.Optional<String> genericSignature) {
+        this(
+                kind,
+                name,
+                descriptor,
+                accessFlags,
+                hasCode,
+                lineNumbers,
+                genericSignature,
+                java.util.List.of());
     }
 
     @Override

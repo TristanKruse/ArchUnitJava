@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import dev.archunitjava.importer.ParsedMember;
+import dev.archunitjava.importer.ParsedCodeAccess;
 import dev.archunitjava.importer.ParsedLineNumber;
 import dev.archunitjava.importer.ParsedAnnotation;
 import dev.archunitjava.importer.ParsedAnnotationDefault;
@@ -170,9 +171,38 @@ public final class TypeModelBuilder {
                     memberAnnotations(signature, kind, parsedAnnotations),
                     annotationDefault(parsed, parsedDefaults),
                     genericFieldView,
-                    genericMethodView));
+                    genericMethodView,
+                    codeAccesses(signature, parsed, location)));
         }
         return List.copyOf(members);
+    }
+
+    private static List<JavaCodeAccess> codeAccesses(
+            JavaMemberSignature caller, ParsedMember parsed, DeclarationLocation location) {
+        LineNumberTable lineNumbers = lineNumbers(parsed.lineNumbers());
+        return parsed.codeAccesses().stream()
+                .map(access -> {
+                    JvmType owner = JvmDescriptors.parseField(access.targetOwnerDescriptor());
+                    boolean method = access.kind() == ParsedCodeAccess.Kind.METHOD_CALL
+                            || access.kind() == ParsedCodeAccess.Kind.CONSTRUCTOR_CALL;
+                    return new JavaCodeAccess(
+                            caller,
+                            new JavaCodeAccessTarget(
+                                    owner,
+                                    access.targetName(),
+                                    access.targetDescriptor(),
+                                    method),
+                            JavaCodeAccessKind.valueOf(access.kind().name()),
+                            JavaCodeAccessOpcode.valueOf(access.opcode().name()),
+                            access.interfaceTarget(),
+                            new BytecodeLocation(
+                                    location.resource(),
+                                    location.sourceFile(),
+                                    access.bytecodeOffset(),
+                                    lineNumbers.lineAt(access.bytecodeOffset())));
+                })
+                .sorted()
+                .toList();
     }
 
     private static List<JavaAnnotationOccurrence> typeAnnotations(

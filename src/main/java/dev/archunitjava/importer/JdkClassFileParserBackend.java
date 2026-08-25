@@ -10,7 +10,11 @@ import java.lang.classfile.ClassFileElement;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.CompoundElement;
 import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.Opcode;
 import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -47,7 +51,8 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                     field.flags().flagsMask(),
                     false,
                     List.of(),
-                    signature(field)));
+                    signature(field),
+                    List.of()));
             addDeclarationAnnotations(
                     field, ParsedAnnotationOccurrence.Container.FIELD, name, descriptor, annotations);
             addTypeAnnotations(
@@ -75,7 +80,8 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                     method.flags().flagsMask(),
                     code.isPresent(),
                     lines,
-                    signature(method)));
+                    signature(method),
+                    code.map(JdkClassFileParserBackend::codeAccesses).orElse(List.of())));
             addDeclarationAnnotations(
                     method, ParsedAnnotationOccurrence.Container.METHOD, name, descriptor, annotations);
             addParameterAnnotations(method, name, descriptor, annotations);
@@ -190,6 +196,56 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 .map(attribute -> attribute.signature().stringValue())
                 .sorted()
                 .findFirst();
+    }
+
+    private static List<ParsedCodeAccess> codeAccesses(java.lang.classfile.CodeModel code) {
+        List<ParsedCodeAccess> result = new ArrayList<>();
+        int bytecodeOffset = 0;
+        for (Object element : code) {
+            if (!(element instanceof Instruction instruction)) continue;
+            if (instruction instanceof FieldInstruction field) {
+                result.add(fieldAccess(field, bytecodeOffset));
+            } else if (instruction instanceof InvokeInstruction invocation) {
+                result.add(methodAccess(invocation, bytecodeOffset));
+            }
+            bytecodeOffset += instruction.sizeInBytes();
+        }
+        return result.stream().sorted().toList();
+    }
+
+    private static ParsedCodeAccess fieldAccess(FieldInstruction field, int offset) {
+        ParsedCodeAccess.Kind kind = switch (field.opcode()) {
+            case GETFIELD, GETSTATIC -> ParsedCodeAccess.Kind.FIELD_READ;
+            case PUTFIELD, PUTSTATIC -> ParsedCodeAccess.Kind.FIELD_WRITE;
+            default -> throw new IllegalArgumentException("Unexpected field opcode: " + field.opcode());
+        };
+        return new ParsedCodeAccess(
+                kind,
+                ParsedCodeAccess.Opcode.valueOf(field.opcode().name()),
+                ownerDescriptor(field.owner().asInternalName()),
+                field.name().stringValue(),
+                field.type().stringValue(),
+                false,
+                offset);
+    }
+
+    private static ParsedCodeAccess methodAccess(InvokeInstruction invocation, int offset) {
+        Opcode opcode = invocation.opcode();
+        ParsedCodeAccess.Kind kind = invocation.name().stringValue().equals("<init>")
+                ? ParsedCodeAccess.Kind.CONSTRUCTOR_CALL
+                : ParsedCodeAccess.Kind.METHOD_CALL;
+        return new ParsedCodeAccess(
+                kind,
+                ParsedCodeAccess.Opcode.valueOf(opcode.name()),
+                ownerDescriptor(invocation.owner().asInternalName()),
+                invocation.name().stringValue(),
+                invocation.type().stringValue(),
+                invocation.isInterface(),
+                offset);
+    }
+
+    private static String ownerDescriptor(String internalName) {
+        return internalName.startsWith("[") ? internalName : "L" + internalName + ";";
     }
 
     private static void addDeclarationAnnotations(

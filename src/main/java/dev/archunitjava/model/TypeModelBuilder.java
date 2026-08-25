@@ -72,7 +72,7 @@ public final class TypeModelBuilder {
         if (has(flags, ClassFile.ACC_ABSTRACT)) modifiers.add(JavaModifier.ABSTRACT);
         if (has(flags, ClassFile.ACC_FINAL)) modifiers.add(JavaModifier.FINAL);
         if (has(flags, ClassFile.ACC_SYNTHETIC)) modifiers.add(JavaModifier.SYNTHETIC);
-        JavaTypeKind typeKind = kind(flags);
+        JavaTypeKind typeKind = kind(flags, parsed.recordDeclaration());
         var superclass = typeKind == JavaTypeKind.INTERFACE || typeKind == JavaTypeKind.ANNOTATION
                 ? java.util.Optional.<JvmReferenceType>empty()
                 : parsed.superclassBinaryName().map(JvmReferenceType::new);
@@ -93,12 +93,41 @@ public final class TypeModelBuilder {
                 interfaces,
                 typeAnnotations(name, parsed.annotations()),
                 GenericClassView.create(superclass, interfaces, parsed.genericSignature()),
+                recordComponents(name, parsed, location),
+                parsed.sealedDeclaration(),
+                parsed.permittedSubclassBinaryNames().stream().map(JvmReferenceType::new).toList(),
                 members(
                         name,
                         parsed.declaredMembers(),
                         parsed.annotations(),
                         parsed.annotationDefaults(),
                         location)));
+    }
+
+    private static List<JavaRecordComponent> recordComponents(
+            JavaTypeName owner, ParsedClassFile parsed, DeclarationLocation location) {
+        return parsed.recordComponents().stream()
+                .map(component -> new JavaRecordComponent(
+                        owner,
+                        component.name(),
+                        component.descriptor(),
+                        GenericFieldView.create(
+                                JvmDescriptors.parseField(component.descriptor()),
+                                component.genericSignature()),
+                        parsed.annotations().stream()
+                                .filter(annotation -> annotation.container()
+                                        == ParsedAnnotationOccurrence.Container.RECORD_COMPONENT)
+                                .filter(annotation -> annotation.ownerName().equals(component.name())
+                                        && annotation.ownerDescriptor().equals(component.descriptor()))
+                                .map(annotation -> annotationOccurrence(
+                                        annotation,
+                                        owner.binaryName(),
+                                        null))
+                                .sorted()
+                                .toList(),
+                        location))
+                .sorted()
+                .toList();
     }
 
     private static List<JavaMember> members(
@@ -303,10 +332,11 @@ public final class TypeModelBuilder {
                 | ClassFile.ACC_ABSTRACT | ClassFile.ACC_STRICT | ClassFile.ACC_SYNTHETIC;
     }
 
-    private static JavaTypeKind kind(int flags) {
+    private static JavaTypeKind kind(int flags, boolean recordDeclaration) {
         if (has(flags, ClassFile.ACC_ANNOTATION)) return JavaTypeKind.ANNOTATION;
         if (has(flags, ClassFile.ACC_ENUM)) return JavaTypeKind.ENUM;
         if (has(flags, ClassFile.ACC_INTERFACE)) return JavaTypeKind.INTERFACE;
+        if (recordDeclaration) return JavaTypeKind.RECORD;
         return JavaTypeKind.CLASS;
     }
 

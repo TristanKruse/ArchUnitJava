@@ -32,6 +32,7 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
         List<ParsedMember> members = new ArrayList<>();
         List<ParsedAnnotationOccurrence> annotations = new ArrayList<>();
         List<ParsedAnnotationDefault> annotationDefaults = new ArrayList<>();
+        List<ParsedRecordComponent> recordComponents = new ArrayList<>();
         addDeclarationAnnotations(
                 model, ParsedAnnotationOccurrence.Container.TYPE, "", "", annotations);
         addTypeAnnotations(
@@ -104,6 +105,8 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 .forEach(component -> {
                     String name = component.name().stringValue();
                     String descriptor = component.descriptor().stringValue();
+                    recordComponents.add(new ParsedRecordComponent(
+                            name, descriptor, signature(component)));
                     addDeclarationAnnotations(
                             component,
                             ParsedAnnotationOccurrence.Container.RECORD_COMPONENT,
@@ -122,6 +125,12 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 .map(attribute -> attribute.sourceFile().stringValue())
                 .sorted()
                 .findFirst();
+        var permittedSubclassAttributes = model.findAttributes(Attributes.permittedSubclasses());
+        List<String> permittedSubclasses = permittedSubclassAttributes.stream()
+                .flatMap(attribute -> attribute.permittedSubclasses().stream())
+                .map(entry -> entry.asInternalName().replace('/', '.'))
+                .sorted()
+                .toList();
         return new ParsedClassHeader(
                 binaryName,
                 model.flags().flagsMask(),
@@ -137,7 +146,11 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 List.copyOf(members),
                 List.copyOf(annotations),
                 List.copyOf(annotationDefaults),
-                signature(model));
+                signature(model),
+                !model.findAttributes(Attributes.record()).isEmpty(),
+                List.copyOf(recordComponents),
+                !permittedSubclassAttributes.isEmpty(),
+                permittedSubclasses);
     }
 
     private static Optional<String> signature(AttributedElement element) {

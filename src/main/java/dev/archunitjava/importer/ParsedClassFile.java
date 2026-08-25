@@ -20,7 +20,11 @@ public record ParsedClassFile(
         List<ParsedMember> declaredMembers,
         List<ParsedAnnotationOccurrence> annotations,
         List<ParsedAnnotationDefault> annotationDefaults,
-        java.util.Optional<String> genericSignature)
+        java.util.Optional<String> genericSignature,
+        boolean recordDeclaration,
+        List<ParsedRecordComponent> recordComponents,
+        boolean sealedDeclaration,
+        List<String> permittedSubclassBinaryNames)
         implements Comparable<ParsedClassFile> {
     public ParsedClassFile {
         if (binaryName == null || binaryName.isBlank()) {
@@ -60,6 +64,18 @@ public record ParsedClassFile(
             if (value.isBlank()) throw new IllegalArgumentException("genericSignature must not be blank");
             return value;
         });
+        recordComponents = sortedCopy(recordComponents, "recordComponent");
+        if (!recordDeclaration && !recordComponents.isEmpty()) {
+            throw new IllegalArgumentException("Only a record declaration can have record components");
+        }
+        Objects.requireNonNull(permittedSubclassBinaryNames, "permittedSubclassBinaryNames");
+        permittedSubclassBinaryNames = permittedSubclassBinaryNames.stream()
+                .map(value -> requireBinaryName(value, "permitted subclass"))
+                .sorted()
+                .toList();
+        if (!sealedDeclaration && !permittedSubclassBinaryNames.isEmpty()) {
+            throw new IllegalArgumentException("Permitted subclasses require a sealed declaration");
+        }
     }
 
     public ParsedClassFile(
@@ -86,7 +102,11 @@ public record ParsedClassFile(
                 List.of(),
                 List.of(),
                 List.of(),
-                java.util.Optional.empty());
+                java.util.Optional.empty(),
+                false,
+                List.of(),
+                false,
+                List.of());
     }
 
     public ParsedClassFile(
@@ -115,7 +135,11 @@ public record ParsedClassFile(
                 declaredMembers,
                 List.of(),
                 List.of(),
-                java.util.Optional.empty());
+                java.util.Optional.empty(),
+                false,
+                List.of(),
+                false,
+                List.of());
     }
 
     public ParsedClassFile(
@@ -146,7 +170,11 @@ public record ParsedClassFile(
                 declaredMembers,
                 List.of(),
                 List.of(),
-                java.util.Optional.empty());
+                java.util.Optional.empty(),
+                false,
+                List.of(),
+                false,
+                List.of());
     }
 
     public ParsedClassFile(
@@ -179,7 +207,49 @@ public record ParsedClassFile(
                 declaredMembers,
                 annotations,
                 annotationDefaults,
-                java.util.Optional.empty());
+                java.util.Optional.empty(),
+                false,
+                List.of(),
+                false,
+                List.of());
+    }
+
+    public ParsedClassFile(
+            String binaryName,
+            int accessFlags,
+            int majorVersion,
+            int minorVersion,
+            boolean moduleDescriptor,
+            String resourceName,
+            ClassFileOrigin origin,
+            int precedence,
+            java.util.Optional<String> superclassBinaryName,
+            List<String> interfaceBinaryNames,
+            java.util.Optional<String> sourceFile,
+            List<ParsedMember> declaredMembers,
+            List<ParsedAnnotationOccurrence> annotations,
+            List<ParsedAnnotationDefault> annotationDefaults,
+            java.util.Optional<String> genericSignature) {
+        this(
+                binaryName,
+                accessFlags,
+                majorVersion,
+                minorVersion,
+                moduleDescriptor,
+                resourceName,
+                origin,
+                precedence,
+                superclassBinaryName,
+                interfaceBinaryNames,
+                sourceFile,
+                declaredMembers,
+                annotations,
+                annotationDefaults,
+                genericSignature,
+                false,
+                List.of(),
+                false,
+                List.of());
     }
 
     private static <T extends Comparable<? super T>> List<T> sortedCopy(

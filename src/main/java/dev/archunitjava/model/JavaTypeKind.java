@@ -5,5 +5,6 @@ public enum JavaTypeKind {
     ANNOTATION,
     CLASS,
     ENUM,
-    INTERFACE
+    INTERFACE,
+    RECORD
 }

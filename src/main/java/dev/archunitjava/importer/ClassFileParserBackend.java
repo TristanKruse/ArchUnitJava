@@ -16,7 +16,11 @@ interface ClassFileParserBackend {
             java.util.List<ParsedMember> declaredMembers,
             java.util.List<ParsedAnnotationOccurrence> annotations,
             java.util.List<ParsedAnnotationDefault> annotationDefaults,
-            java.util.Optional<String> genericSignature) {}
+            java.util.Optional<String> genericSignature,
+            boolean recordDeclaration,
+            java.util.List<ParsedRecordComponent> recordComponents,
+            boolean sealedDeclaration,
+            java.util.List<String> permittedSubclassBinaryNames) {}
 
     @FunctionalInterface
     interface TraversalObserver {

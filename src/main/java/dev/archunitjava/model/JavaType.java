@@ -25,6 +25,9 @@ public final class JavaType implements Comparable<JavaType> {
     private final List<JvmReferenceType> directInterfaces;
     private final List<JavaAnnotationOccurrence> annotations;
     private final GenericClassView genericView;
+    private final List<JavaRecordComponent> recordComponents;
+    private final boolean sealedDeclaration;
+    private final List<JvmReferenceType> permittedSubclasses;
 
     JavaType(
             JavaTypeName name,
@@ -40,6 +43,9 @@ public final class JavaType implements Comparable<JavaType> {
             List<JvmReferenceType> directInterfaces,
             List<JavaAnnotationOccurrence> annotations,
             GenericClassView genericView,
+            List<JavaRecordComponent> recordComponents,
+            boolean sealedDeclaration,
+            List<JvmReferenceType> permittedSubclasses,
             List<JavaMember> declaredMembers) {
         this.name = Objects.requireNonNull(name, "name");
         this.owner = new TypeOwner(name.packageName());
@@ -75,6 +81,30 @@ public final class JavaType implements Comparable<JavaType> {
         if (!this.superclass.equals(genericView.erasedSuperclass())
                 || !this.directInterfaces.equals(genericView.erasedInterfaces())) {
             throw new IllegalArgumentException("Generic view must retain the erased hierarchy");
+        }
+        Objects.requireNonNull(recordComponents, "recordComponents");
+        TreeSet<JavaRecordComponent> sortedComponents = new TreeSet<>();
+        for (JavaRecordComponent component : recordComponents) {
+            JavaRecordComponent value = Objects.requireNonNull(component, "recordComponent");
+            if (!value.owner().equals(name)) {
+                throw new IllegalArgumentException("Record component owner must match its type");
+            }
+            if (!sortedComponents.add(value)) {
+                throw new IllegalArgumentException("Duplicate record component: " + value.name());
+            }
+        }
+        if (kind != JavaTypeKind.RECORD && !sortedComponents.isEmpty()) {
+            throw new IllegalArgumentException("Only records can declare record components");
+        }
+        this.recordComponents = List.copyOf(sortedComponents);
+        this.sealedDeclaration = sealedDeclaration;
+        Objects.requireNonNull(permittedSubclasses, "permittedSubclasses");
+        this.permittedSubclasses = permittedSubclasses.stream()
+                .map(value -> Objects.requireNonNull(value, "permittedSubclass"))
+                .sorted(java.util.Comparator.comparing(JvmReferenceType::binaryName))
+                .toList();
+        if (!sealedDeclaration && !this.permittedSubclasses.isEmpty()) {
+            throw new IllegalArgumentException("Permitted subclasses require a sealed declaration");
         }
         Objects.requireNonNull(declaredMembers, "declaredMembers");
         TreeSet<JavaMember> sortedMembers = new TreeSet<>();
@@ -159,6 +189,19 @@ public final class JavaType implements Comparable<JavaType> {
 
     public GenericClassView genericView() {
         return genericView;
+    }
+
+    public List<JavaRecordComponent> recordComponents() {
+        return recordComponents;
+    }
+
+    public boolean isSealed() {
+        return sealedDeclaration;
+    }
+
+    /** Declared permitted subclasses; this is not a list of observed direct subclasses. */
+    public List<JvmReferenceType> permittedSubclasses() {
+        return permittedSubclasses;
     }
 
     @Override

@@ -22,6 +22,7 @@ public final class TypeHierarchy {
         values.values().forEach(node -> {
             node.superclass.ifPresent(type -> referenced.add(type.binaryName()));
             node.interfaces.forEach(type -> referenced.add(type.binaryName()));
+            node.permittedSubclasses.forEach(type -> referenced.add(type.binaryName()));
         });
         referenced.forEach(name -> values.putIfAbsent(name, Node.missing(name)));
         nodes = Map.copyOf(values);
@@ -99,6 +100,88 @@ public final class TypeHierarchy {
         return hierarchy.complete() ? Assignability.NO : Assignability.UNKNOWN;
     }
 
+    /** Compares a sealed declaration with direct subtype evidence available in this model. */
+    public SealedHierarchyResult sealedHierarchy(String binaryName) {
+        JavaTypeName requested = new JavaTypeName(binaryName);
+        Node subject = nodes.get(binaryName);
+        if (subject == null || !subject.present) {
+            return new SealedHierarchyResult(
+                    requested,
+                    false,
+                    List.of(),
+                    List.of(),
+                    List.of(requested),
+                    List.of(diagnostic(SealedHierarchyDiagnosticCode.QUERY_TYPE_MISSING, requested)),
+                    false);
+        }
+        List<JavaTypeName> observed = nodes.values().stream()
+                .filter(node -> node.present && directNames(node).contains(binaryName))
+                .map(node -> node.name)
+                .sorted()
+                .toList();
+        List<JavaTypeName> declared = subject.permittedSubclasses.stream()
+                .map(type -> new JavaTypeName(type.binaryName()))
+                .sorted()
+                .toList();
+        if (!subject.sealed) {
+            return new SealedHierarchyResult(
+                    requested, false, declared, observed, List.of(), List.of(), true);
+        }
+
+        List<SealedHierarchyDiagnostic> diagnostics = new ArrayList<>();
+        TreeSet<JavaTypeName> missing = new TreeSet<>();
+        if (declared.isEmpty()) {
+            diagnostics.add(diagnostic(
+                    SealedHierarchyDiagnosticCode.EMPTY_PERMITTED_SUBCLASS_LIST, null));
+        }
+        TreeSet<JavaTypeName> uniqueDeclared = new TreeSet<>();
+        for (JavaTypeName permitted : declared) {
+            if (!uniqueDeclared.add(permitted)) {
+                diagnostics.add(diagnostic(
+                        SealedHierarchyDiagnosticCode.DUPLICATE_PERMITTED_SUBCLASS, permitted));
+                continue;
+            }
+            if (permitted.equals(requested)) {
+                diagnostics.add(diagnostic(
+                        SealedHierarchyDiagnosticCode.SELF_PERMITTED_SUBCLASS, permitted));
+                continue;
+            }
+            Node candidate = nodes.get(permitted.binaryName());
+            if (candidate == null || !candidate.present) {
+                missing.add(permitted);
+                diagnostics.add(diagnostic(
+                        SealedHierarchyDiagnosticCode.MISSING_PERMITTED_SUBCLASS, permitted));
+            } else if (directNames(candidate).contains(binaryName)) {
+                // The declared and observed direct relationship agrees.
+            } else if (!candidate.complete) {
+                diagnostics.add(diagnostic(
+                        SealedHierarchyDiagnosticCode.PERMITTED_RELATIONSHIP_UNKNOWN, permitted));
+            } else {
+                diagnostics.add(diagnostic(
+                        SealedHierarchyDiagnosticCode.PERMITTED_SUBCLASS_NOT_DIRECT, permitted));
+            }
+        }
+        for (JavaTypeName subtype : observed) {
+            if (!uniqueDeclared.contains(subtype)) {
+                diagnostics.add(diagnostic(
+                        SealedHierarchyDiagnosticCode.OBSERVED_SUBCLASS_NOT_PERMITTED, subtype));
+            }
+        }
+        return new SealedHierarchyResult(
+                requested,
+                true,
+                declared,
+                observed,
+                List.copyOf(missing),
+                diagnostics,
+                diagnostics.isEmpty());
+    }
+
+    private static SealedHierarchyDiagnostic diagnostic(
+            SealedHierarchyDiagnosticCode code, JavaTypeName relatedType) {
+        return new SealedHierarchyDiagnostic(code, Optional.ofNullable(relatedType));
+    }
+
     private static List<String> directNames(Node node) {
         TreeSet<String> names = new TreeSet<>();
         node.superclass.ifPresent(type -> names.add(type.binaryName()));
@@ -138,20 +221,44 @@ public final class TypeHierarchy {
             Optional<JavaTypeKind> kind,
             Optional<JvmReferenceType> superclass,
             List<JvmReferenceType> interfaces,
-            boolean complete) {
+            boolean complete,
+            boolean present,
+            boolean sealed,
+            List<JvmReferenceType> permittedSubclasses) {
         static Node imported(JavaType type) {
             return new Node(
-                    type.name(), Optional.of(type.kind()), type.superclass(), type.directInterfaces(), true);
+                    type.name(),
+                    Optional.of(type.kind()),
+                    type.superclass(),
+                    type.directInterfaces(),
+                    true,
+                    true,
+                    type.isSealed(),
+                    type.permittedSubclasses());
         }
 
         static Node external(ExternalTypeStub stub) {
             return new Node(
-                    stub.name(), stub.kind(), stub.superclass(), stub.directInterfaces(), stub.hierarchyComplete());
+                    stub.name(),
+                    stub.kind(),
+                    stub.superclass(),
+                    stub.directInterfaces(),
+                    stub.hierarchyComplete(),
+                    true,
+                    false,
+                    List.of());
         }
 
         static Node missing(String binaryName) {
             return new Node(
-                    new JavaTypeName(binaryName), Optional.empty(), Optional.empty(), List.of(), false);
+                    new JavaTypeName(binaryName),
+                    Optional.empty(),
+                    Optional.empty(),
+                    List.of(),
+                    false,
+                    false,
+                    false,
+                    List.of());
         }
     }
 

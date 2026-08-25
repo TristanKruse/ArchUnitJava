@@ -96,7 +96,8 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                     signature(method),
                     code.map(JdkClassFileParserBackend::codeAccesses).orElse(List.of()),
                     code.map(JdkClassFileParserBackend::dynamicCallSites).orElse(List.of()),
-                    exceptionEvidence(method, code)));
+                    exceptionEvidence(method, code),
+                    methodParameters(method)));
             addDeclarationAnnotations(
                     method, ParsedAnnotationOccurrence.Container.METHOD, name, descriptor, annotations);
             addParameterAnnotations(method, name, descriptor, annotations);
@@ -202,6 +203,21 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                         innerClasses, enclosingMethods, nestHosts, nestMembers),
                 constantPoolEvidence(model),
                 moduleDescriptor(model));
+    }
+
+    private static List<ParsedMethodParameter> methodParameters(
+            java.lang.classfile.MethodModel method) {
+        return method.findAttribute(Attributes.methodParameters()).stream()
+                .flatMap(attribute -> java.util.stream.IntStream
+                        .range(0, attribute.parameters().size())
+                        .mapToObj(index -> {
+                            var parameter = attribute.parameters().get(index);
+                            return new ParsedMethodParameter(
+                                    index,
+                                    parameter.name().map(value -> value.stringValue()),
+                                    parameter.flagsMask());
+                        }))
+                .toList();
     }
 
     private static String binaryName(String internalName) {

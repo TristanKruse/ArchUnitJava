@@ -11,7 +11,8 @@ public record ParsedMember(
         java.util.Optional<String> genericSignature,
         java.util.List<ParsedCodeAccess> codeAccesses,
         java.util.List<ParsedDynamicCallSite> dynamicCallSites,
-        java.util.List<ParsedExceptionEvidence> exceptionEvidence)
+        java.util.List<ParsedExceptionEvidence> exceptionEvidence,
+        java.util.List<ParsedMethodParameter> parameters)
         implements Comparable<ParsedMember> {
     public enum Kind {
         FIELD,
@@ -71,6 +72,44 @@ public record ParsedMember(
                 .anyMatch(value -> value.kind() != ParsedExceptionEvidence.Kind.DECLARED_THROWS)) {
             throw new IllegalArgumentException("members without bytecode cannot have handler or throw evidence");
         }
+        if (parameters == null) throw new NullPointerException("parameters");
+        parameters = parameters.stream()
+                .map(value -> java.util.Objects.requireNonNull(value, "parameter"))
+                .sorted()
+                .toList();
+        if (kind == Kind.FIELD && !parameters.isEmpty()) {
+            throw new IllegalArgumentException("fields cannot have method parameters");
+        }
+        for (int index = 0; index < parameters.size(); index++) {
+            if (parameters.get(index).index() != index) {
+                throw new IllegalArgumentException("parameter indexes must be contiguous from zero");
+            }
+        }
+    }
+
+    public ParsedMember(
+            Kind kind,
+            String name,
+            String descriptor,
+            int accessFlags,
+            boolean hasCode,
+            java.util.List<ParsedLineNumber> lineNumbers,
+            java.util.Optional<String> genericSignature,
+            java.util.List<ParsedCodeAccess> codeAccesses,
+            java.util.List<ParsedDynamicCallSite> dynamicCallSites,
+            java.util.List<ParsedExceptionEvidence> exceptionEvidence) {
+        this(
+                kind,
+                name,
+                descriptor,
+                accessFlags,
+                hasCode,
+                lineNumbers,
+                genericSignature,
+                codeAccesses,
+                dynamicCallSites,
+                exceptionEvidence,
+                java.util.List.of());
     }
 
     public ParsedMember(
@@ -83,6 +122,7 @@ public record ParsedMember(
                 hasCode,
                 java.util.List.of(),
                 java.util.Optional.empty(),
+                java.util.List.of(),
                 java.util.List.of(),
                 java.util.List.of(),
                 java.util.List.of());
@@ -103,6 +143,7 @@ public record ParsedMember(
                 hasCode,
                 lineNumbers,
                 java.util.Optional.empty(),
+                java.util.List.of(),
                 java.util.List.of(),
                 java.util.List.of(),
                 java.util.List.of());
@@ -126,6 +167,7 @@ public record ParsedMember(
                 genericSignature,
                 java.util.List.of(),
                 java.util.List.of(),
+                java.util.List.of(),
                 java.util.List.of());
     }
 
@@ -147,6 +189,7 @@ public record ParsedMember(
                 lineNumbers,
                 genericSignature,
                 codeAccesses,
+                java.util.List.of(),
                 java.util.List.of(),
                 java.util.List.of());
 
@@ -172,6 +215,7 @@ public record ParsedMember(
                 genericSignature,
                 codeAccesses,
                 dynamicCallSites,
+                java.util.List.of(),
                 java.util.List.of());
     }
 

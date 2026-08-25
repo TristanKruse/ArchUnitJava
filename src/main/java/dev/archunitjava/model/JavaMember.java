@@ -22,6 +22,7 @@ public final class JavaMember implements Comparable<JavaMember> {
     private final Optional<JavaAnnotationValue> annotationDefault;
     private final Optional<GenericFieldView> genericFieldView;
     private final Optional<GenericMethodView> genericMethodView;
+    private final List<JavaParameter> parameters;
     private final List<JavaCodeAccess> codeAccesses;
     private final List<JavaDynamicCallSite> dynamicCallSites;
     private final List<JavaExceptionEvidence> exceptionEvidence;
@@ -39,6 +40,7 @@ public final class JavaMember implements Comparable<JavaMember> {
             Optional<JavaAnnotationValue> annotationDefault,
             Optional<GenericFieldView> genericFieldView,
             Optional<GenericMethodView> genericMethodView,
+            List<JavaParameter> parameters,
             List<JavaCodeAccess> codeAccesses,
             List<JavaDynamicCallSite> dynamicCallSites,
             List<JavaExceptionEvidence> exceptionEvidence) {
@@ -71,6 +73,22 @@ public final class JavaMember implements Comparable<JavaMember> {
         if ((kind == JavaMemberKind.FIELD) != genericFieldView.isPresent()
                 || (kind != JavaMemberKind.FIELD) != genericMethodView.isPresent()) {
             throw new IllegalArgumentException("Generic view must match the member kind");
+        }
+        Objects.requireNonNull(parameters, "parameters");
+        this.parameters = parameters.stream()
+                .map(value -> Objects.requireNonNull(value, "parameter"))
+                .sorted()
+                .toList();
+        if (kind == JavaMemberKind.FIELD && !this.parameters.isEmpty()) {
+            throw new IllegalArgumentException("Fields cannot have parameters");
+        }
+        if (this.parameters.stream().anyMatch(value -> !value.owner().equals(signature))) {
+            throw new IllegalArgumentException("Parameter owner must match its member");
+        }
+        for (int index = 0; index < this.parameters.size(); index++) {
+            if (this.parameters.get(index).index() != index) {
+                throw new IllegalArgumentException("Parameter indexes must be contiguous from zero");
+            }
         }
         Objects.requireNonNull(codeAccesses, "codeAccesses");
         this.codeAccesses = codeAccesses.stream()
@@ -198,6 +216,10 @@ public final class JavaMember implements Comparable<JavaMember> {
             throw new IllegalStateException("Fields do not have a generic method view");
         }
         return genericMethodView.orElseThrow();
+    }
+
+    public List<JavaParameter> parameters() {
+        return parameters;
     }
 
     public List<JavaCodeAccess> codeAccesses() {

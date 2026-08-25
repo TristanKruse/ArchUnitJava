@@ -9,7 +9,8 @@ public record JavaCodeAccess(
         JavaCodeAccessKind kind,
         JavaCodeAccessOpcode opcode,
         boolean interfaceTarget,
-        BytecodeLocation location)
+        BytecodeLocation location,
+        CompilerArtifactProvenance artifactProvenance)
         implements Comparable<JavaCodeAccess> {
     public JavaCodeAccess {
         Objects.requireNonNull(caller, "caller");
@@ -17,6 +18,7 @@ public record JavaCodeAccess(
         Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(opcode, "opcode");
         Objects.requireNonNull(location, "location");
+        Objects.requireNonNull(artifactProvenance, "artifactProvenance");
         boolean fieldOpcode = switch (opcode) {
             case GETFIELD, GETSTATIC, PUTFIELD, PUTSTATIC -> true;
             default -> false;
@@ -38,6 +40,23 @@ public record JavaCodeAccess(
                     : JavaCodeAccessKind.METHOD_CALL;
         };
         if (kind != opcodeKind) throw new IllegalArgumentException("Kind does not match opcode");
+    }
+
+    public JavaCodeAccess(
+            JavaMemberSignature caller,
+            JavaCodeAccessTarget target,
+            JavaCodeAccessKind kind,
+            JavaCodeAccessOpcode opcode,
+            boolean interfaceTarget,
+            BytecodeLocation location) {
+        this(
+                caller,
+                target,
+                kind,
+                opcode,
+                interfaceTarget,
+                location,
+                CompilerArtifactProvenance.sourceDeclared());
     }
 
     @Override

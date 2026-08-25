@@ -109,7 +109,8 @@ public final class TypeModelBuilder {
                         parsed.declaredMembers(),
                         parsed.annotations(),
                         parsed.annotationDefaults(),
-                        location)));
+                        location,
+                        has(flags, ClassFile.ACC_SYNTHETIC))));
     }
 
     private static JavaModule module(ParsedClassFile parsed) {
@@ -251,7 +252,8 @@ public final class TypeModelBuilder {
             List<ParsedMember> parsedMembers,
             List<ParsedAnnotationOccurrence> parsedAnnotations,
             List<ParsedAnnotationDefault> parsedDefaults,
-            DeclarationLocation location) {
+            DeclarationLocation location,
+            boolean syntheticType) {
         List<JavaMember> members = new ArrayList<>();
         for (ParsedMember parsed : parsedMembers) {
             JavaMemberKind kind = memberKind(parsed);
@@ -286,7 +288,8 @@ public final class TypeModelBuilder {
                     annotationDefault(parsed, parsedDefaults),
                     genericFieldView,
                     genericMethodView,
-                    codeAccesses(signature, parsed, location),
+                    parameters(signature, parsed, genericMethodView),
+                    codeAccesses(signature, parsed, location, syntheticType),
                     dynamicCallSites(signature, parsed, location),
                     exceptionEvidence(signature, parsed, location)));
         }
@@ -294,7 +297,10 @@ public final class TypeModelBuilder {
     }
 
     private static List<JavaCodeAccess> codeAccesses(
-            JavaMemberSignature caller, ParsedMember parsed, DeclarationLocation location) {
+            JavaMemberSignature caller,
+            ParsedMember parsed,
+            DeclarationLocation location,
+            boolean syntheticType) {
         LineNumberTable lineNumbers = lineNumbers(parsed.lineNumbers());
         return parsed.codeAccesses().stream()
                 .map(access -> {
@@ -315,10 +321,46 @@ public final class TypeModelBuilder {
                                     location.resource(),
                                     location.sourceFile(),
                                     access.bytecodeOffset(),
-                                    lineNumbers.lineAt(access.bytecodeOffset())));
+                                    lineNumbers.lineAt(access.bytecodeOffset())),
+                            new CompilerArtifactProvenance(
+                                    syntheticType,
+                                    has(parsed.accessFlags(), ClassFile.ACC_SYNTHETIC),
+                                    has(parsed.accessFlags(), ClassFile.ACC_BRIDGE)));
                 })
                 .sorted()
                 .toList();
+    }
+
+    private static List<JavaParameter> parameters(
+            JavaMemberSignature owner,
+            ParsedMember parsed,
+            Optional<GenericMethodView> genericMethodView) {
+        if (parsed.kind() == ParsedMember.Kind.FIELD) return List.of();
+        List<JvmType> types = genericMethodView.orElseThrow().erasedType().parameterTypes();
+        if (!parsed.parameters().isEmpty() && parsed.parameters().size() != types.size()) {
+            throw new IllegalArgumentException(
+                    "MethodParameters count does not match descriptor for " + owner.stableKey());
+        }
+        List<JavaParameter> result = new ArrayList<>();
+        for (int index = 0; index < types.size(); index++) {
+            dev.archunitjava.importer.ParsedMethodParameter parsedParameter =
+                    parsed.parameters().isEmpty() ? null : parsed.parameters().get(index);
+            int flags = parsedParameter == null ? 0 : parsedParameter.accessFlags();
+            EnumSet<JavaParameterModifier> modifiers = EnumSet.noneOf(JavaParameterModifier.class);
+            if (has(flags, ClassFile.ACC_FINAL)) modifiers.add(JavaParameterModifier.FINAL);
+            if (has(flags, ClassFile.ACC_SYNTHETIC)) modifiers.add(JavaParameterModifier.SYNTHETIC);
+            if (has(flags, ClassFile.ACC_MANDATED)) modifiers.add(JavaParameterModifier.MANDATED);
+            int known = ClassFile.ACC_FINAL | ClassFile.ACC_SYNTHETIC | ClassFile.ACC_MANDATED;
+            result.add(new JavaParameter(
+                    owner,
+                    index,
+                    types.get(index),
+                    parsedParameter == null ? Optional.empty() : parsedParameter.name(),
+                    modifiers,
+                    flags,
+                    flags & ~known));
+        }
+        return List.copyOf(result);
     }
 
     private static List<JavaDynamicCallSite> dynamicCallSites(

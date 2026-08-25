@@ -172,7 +172,8 @@ public final class TypeModelBuilder {
                     annotationDefault(parsed, parsedDefaults),
                     genericFieldView,
                     genericMethodView,
-                    codeAccesses(signature, parsed, location)));
+                    codeAccesses(signature, parsed, location),
+                    dynamicCallSites(signature, parsed, location)));
         }
         return List.copyOf(members);
     }
@@ -203,6 +204,100 @@ public final class TypeModelBuilder {
                 })
                 .sorted()
                 .toList();
+    }
+
+    private static List<JavaDynamicCallSite> dynamicCallSites(
+            JavaMemberSignature caller, ParsedMember parsed, DeclarationLocation location) {
+        LineNumberTable lines = lineNumbers(parsed.lineNumbers());
+        return parsed.dynamicCallSites().stream()
+                .map(site -> dynamicCallSite(caller, site, location, lines))
+                .sorted()
+                .toList();
+    }
+
+    private static JavaDynamicCallSite dynamicCallSite(
+            JavaMemberSignature caller,
+            dev.archunitjava.importer.ParsedDynamicCallSite parsed,
+            DeclarationLocation location,
+            LineNumberTable lines) {
+        JavaMethodHandle bootstrap = methodHandle(parsed.bootstrapMethod());
+        int retained = Math.min(
+                parsed.bootstrapArguments().size(), JavaDynamicCallSite.MAXIMUM_BOOTSTRAP_ARGUMENTS);
+        List<JavaBootstrapArgument> arguments = parsed.bootstrapArguments().stream()
+                .limit(retained)
+                .map(value -> new JavaBootstrapArgument(
+                        value.kind(),
+                        value.encodedValue(),
+                        value.methodHandle().map(TypeModelBuilder::methodHandle)))
+                .toList();
+        JvmMethodType invocationType = JvmDescriptors.parseMethod(parsed.invocationDescriptor());
+        Optional<JavaMethodHandle> implementation = arguments.size() >= 2
+                ? arguments.get(1).methodHandle()
+                : Optional.empty();
+        boolean lambdaShape = isBootstrap(
+                        bootstrap,
+                        "java.lang.invoke.LambdaMetafactory",
+                        "metafactory",
+                        "altMetafactory")
+                && bootstrap.kind() == JavaMethodHandleKind.STATIC
+                && arguments.size() >= 3
+                && arguments.get(0).kind().equals("METHOD_TYPE")
+                && implementation.isPresent()
+                && arguments.get(2).kind().equals("METHOD_TYPE")
+                && invocationType.returnType() instanceof JvmReferenceType;
+        JavaDynamicCallSiteKind kind;
+        List<JvmReferenceType> functionalInterfaces;
+        if (lambdaShape) {
+            kind = JavaDynamicCallSiteKind.LAMBDA_METAFACTORY;
+            functionalInterfaces = List.of((JvmReferenceType) invocationType.returnType());
+        } else if (isBootstrap(
+                        bootstrap,
+                        "java.lang.invoke.StringConcatFactory",
+                        "makeConcat",
+                        "makeConcatWithConstants")
+                && bootstrap.kind() == JavaMethodHandleKind.STATIC) {
+            kind = JavaDynamicCallSiteKind.STRING_CONCAT;
+            implementation = Optional.empty();
+            functionalInterfaces = List.of();
+        } else {
+            kind = JavaDynamicCallSiteKind.GENERIC;
+            implementation = Optional.empty();
+            functionalInterfaces = List.of();
+        }
+        return new JavaDynamicCallSite(
+                caller,
+                parsed.invocationName(),
+                invocationType,
+                bootstrap,
+                arguments,
+                parsed.bootstrapArguments().size(),
+                parsed.bootstrapArguments().size() > retained,
+                kind,
+                implementation,
+                functionalInterfaces,
+                new BytecodeLocation(
+                        location.resource(),
+                        location.sourceFile(),
+                        parsed.bytecodeOffset(),
+                        lines.lineAt(parsed.bytecodeOffset())));
+    }
+
+    private static boolean isBootstrap(
+            JavaMethodHandle handle, String owner, String... names) {
+        if (!(handle.ownerType() instanceof JvmReferenceType reference)
+                || !reference.binaryName().equals(owner)) return false;
+        return java.util.Arrays.asList(names).contains(handle.name());
+    }
+
+    private static JavaMethodHandle methodHandle(
+            dev.archunitjava.importer.ParsedMethodHandle parsed) {
+        return new JavaMethodHandle(
+                JavaMethodHandleKind.valueOf(parsed.kind()),
+                parsed.referenceKind(),
+                JvmDescriptors.parseField(parsed.ownerDescriptor()),
+                parsed.name(),
+                parsed.lookupDescriptor(),
+                parsed.ownerInterface());
     }
 
     private static List<JavaAnnotationOccurrence> typeAnnotations(

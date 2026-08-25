@@ -9,7 +9,8 @@ public record ParsedMember(
         boolean hasCode,
         java.util.List<ParsedLineNumber> lineNumbers,
         java.util.Optional<String> genericSignature,
-        java.util.List<ParsedCodeAccess> codeAccesses)
+        java.util.List<ParsedCodeAccess> codeAccesses,
+        java.util.List<ParsedDynamicCallSite> dynamicCallSites)
         implements Comparable<ParsedMember> {
     public enum Kind {
         FIELD,
@@ -49,6 +50,14 @@ public record ParsedMember(
         if (!hasCode && !codeAccesses.isEmpty()) {
             throw new IllegalArgumentException("members without bytecode cannot have code accesses");
         }
+        if (dynamicCallSites == null) throw new NullPointerException("dynamicCallSites");
+        dynamicCallSites = dynamicCallSites.stream()
+                .map(value -> java.util.Objects.requireNonNull(value, "dynamicCallSite"))
+                .sorted()
+                .toList();
+        if (!hasCode && !dynamicCallSites.isEmpty()) {
+            throw new IllegalArgumentException("members without bytecode cannot have dynamic call sites");
+        }
     }
 
     public ParsedMember(
@@ -61,6 +70,7 @@ public record ParsedMember(
                 hasCode,
                 java.util.List.of(),
                 java.util.Optional.empty(),
+                java.util.List.of(),
                 java.util.List.of());
     }
 
@@ -79,6 +89,7 @@ public record ParsedMember(
                 hasCode,
                 lineNumbers,
                 java.util.Optional.empty(),
+                java.util.List.of(),
                 java.util.List.of());
     }
 
@@ -98,6 +109,28 @@ public record ParsedMember(
                 hasCode,
                 lineNumbers,
                 genericSignature,
+                java.util.List.of(),
+                java.util.List.of());
+    }
+
+    public ParsedMember(
+            Kind kind,
+            String name,
+            String descriptor,
+            int accessFlags,
+            boolean hasCode,
+            java.util.List<ParsedLineNumber> lineNumbers,
+            java.util.Optional<String> genericSignature,
+            java.util.List<ParsedCodeAccess> codeAccesses) {
+        this(
+                kind,
+                name,
+                descriptor,
+                accessFlags,
+                hasCode,
+                lineNumbers,
+                genericSignature,
+                codeAccesses,
                 java.util.List.of());
     }
 

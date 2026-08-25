@@ -15,6 +15,11 @@ import java.lang.classfile.Opcode;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.instruction.FieldInstruction;
 import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDesc;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -52,6 +57,7 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                     false,
                     List.of(),
                     signature(field),
+                    List.of(),
                     List.of()));
             addDeclarationAnnotations(
                     field, ParsedAnnotationOccurrence.Container.FIELD, name, descriptor, annotations);
@@ -81,7 +87,8 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                     code.isPresent(),
                     lines,
                     signature(method),
-                    code.map(JdkClassFileParserBackend::codeAccesses).orElse(List.of())));
+                    code.map(JdkClassFileParserBackend::codeAccesses).orElse(List.of()),
+                    code.map(JdkClassFileParserBackend::dynamicCallSites).orElse(List.of())));
             addDeclarationAnnotations(
                     method, ParsedAnnotationOccurrence.Container.METHOD, name, descriptor, annotations);
             addParameterAnnotations(method, name, descriptor, annotations);
@@ -211,6 +218,70 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
             bytecodeOffset += instruction.sizeInBytes();
         }
         return result.stream().sorted().toList();
+    }
+
+    private static List<ParsedDynamicCallSite> dynamicCallSites(
+            java.lang.classfile.CodeModel code) {
+        List<ParsedDynamicCallSite> result = new ArrayList<>();
+        int bytecodeOffset = 0;
+        for (Object element : code) {
+            if (!(element instanceof Instruction instruction)) continue;
+            if (instruction instanceof InvokeDynamicInstruction dynamic) {
+                result.add(new ParsedDynamicCallSite(
+                        dynamic.name().stringValue(),
+                        dynamic.type().stringValue(),
+                        methodHandle(dynamic.bootstrapMethod()),
+                        dynamic.bootstrapArgs().stream()
+                                .map(JdkClassFileParserBackend::bootstrapArgument)
+                                .toList(),
+                        bytecodeOffset));
+            }
+            bytecodeOffset += instruction.sizeInBytes();
+        }
+        return result.stream().sorted().toList();
+    }
+
+    private static ParsedBootstrapArgument bootstrapArgument(ConstantDesc argument) {
+        if (argument instanceof DirectMethodHandleDesc handle) {
+            ParsedMethodHandle parsed = methodHandle(handle);
+            return new ParsedBootstrapArgument(
+                    "METHOD_HANDLE", handle.lookupDescriptor(), Optional.of(parsed));
+        }
+        if (argument instanceof MethodTypeDesc methodType) {
+            return new ParsedBootstrapArgument(
+                    "METHOD_TYPE", methodType.descriptorString(), Optional.empty());
+        }
+        if (argument instanceof ClassDesc classDesc) {
+            return new ParsedBootstrapArgument(
+                    "CLASS", classDesc.descriptorString(), Optional.empty());
+        }
+        if (argument instanceof String value) {
+            return new ParsedBootstrapArgument("STRING", value, Optional.empty());
+        }
+        if (argument instanceof Float value) {
+            return new ParsedBootstrapArgument(
+                    "FLOAT_RAW_BITS",
+                    Integer.toUnsignedString(Float.floatToRawIntBits(value)),
+                    Optional.empty());
+        }
+        if (argument instanceof Double value) {
+            return new ParsedBootstrapArgument(
+                    "DOUBLE_RAW_BITS",
+                    Long.toUnsignedString(Double.doubleToRawLongBits(value)),
+                    Optional.empty());
+        }
+        return new ParsedBootstrapArgument(
+                argument.getClass().getName(), String.valueOf(argument), Optional.empty());
+    }
+
+    private static ParsedMethodHandle methodHandle(DirectMethodHandleDesc handle) {
+        return new ParsedMethodHandle(
+                handle.kind().name(),
+                handle.refKind(),
+                handle.owner().descriptorString(),
+                handle.methodName(),
+                handle.lookupDescriptor(),
+                handle.isOwnerInterface());
     }
 
     private static ParsedCodeAccess fieldAccess(FieldInstruction field, int offset) {

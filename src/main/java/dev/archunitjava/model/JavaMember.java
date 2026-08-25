@@ -23,6 +23,7 @@ public final class JavaMember implements Comparable<JavaMember> {
     private final Optional<GenericFieldView> genericFieldView;
     private final Optional<GenericMethodView> genericMethodView;
     private final List<JavaCodeAccess> codeAccesses;
+    private final List<JavaDynamicCallSite> dynamicCallSites;
 
     JavaMember(
             JavaMemberSignature signature,
@@ -37,7 +38,8 @@ public final class JavaMember implements Comparable<JavaMember> {
             Optional<JavaAnnotationValue> annotationDefault,
             Optional<GenericFieldView> genericFieldView,
             Optional<GenericMethodView> genericMethodView,
-            List<JavaCodeAccess> codeAccesses) {
+            List<JavaCodeAccess> codeAccesses,
+            List<JavaDynamicCallSite> dynamicCallSites) {
         this.signature = Objects.requireNonNull(signature, "signature");
         this.kind = Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(modifiers, "modifiers");
@@ -78,6 +80,17 @@ public final class JavaMember implements Comparable<JavaMember> {
         }
         if (this.codeAccesses.stream().anyMatch(access -> !access.caller().equals(signature))) {
             throw new IllegalArgumentException("Code access caller must match its declaring member");
+        }
+        Objects.requireNonNull(dynamicCallSites, "dynamicCallSites");
+        this.dynamicCallSites = dynamicCallSites.stream()
+                .map(value -> Objects.requireNonNull(value, "dynamicCallSite"))
+                .sorted()
+                .toList();
+        if (!hasCode && !this.dynamicCallSites.isEmpty()) {
+            throw new IllegalArgumentException("Members without bytecode cannot have dynamic call sites");
+        }
+        if (this.dynamicCallSites.stream().anyMatch(site -> !site.caller().equals(signature))) {
+            throw new IllegalArgumentException("Dynamic call-site caller must match its member");
         }
     }
 
@@ -176,6 +189,10 @@ public final class JavaMember implements Comparable<JavaMember> {
 
     public List<JavaCodeAccess> codeAccesses() {
         return codeAccesses;
+    }
+
+    public List<JavaDynamicCallSite> dynamicCallSites() {
+        return dynamicCallSites;
     }
 
     @Override

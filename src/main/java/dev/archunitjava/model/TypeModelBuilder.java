@@ -98,12 +98,83 @@ public final class TypeModelBuilder {
                 parsed.sealedDeclaration(),
                 parsed.permittedSubclassBinaryNames().stream().map(JvmReferenceType::new).toList(),
                 JavaNesting.from(name, parsed.nestingMetadata()),
+                constantPoolEvidence(name, parsed, location),
                 members(
                         name,
                         parsed.declaredMembers(),
                         parsed.annotations(),
                         parsed.annotationDefaults(),
                         location)));
+    }
+
+    private static JavaConstantPoolEvidence constantPoolEvidence(
+            JavaTypeName owner, ParsedClassFile parsed, DeclarationLocation location) {
+        List<JavaConstantEvidence> constants = parsed.constantPoolEvidence().constants().stream()
+                .map(value -> {
+                    Optional<JavaMethodHandle> handle = value.methodHandle()
+                            .map(TypeModelBuilder::methodHandle);
+                    Optional<JavaDynamicConstant> dynamic = value.dynamicConstant()
+                            .map(TypeModelBuilder::dynamicConstant);
+                    Optional<JavaConstantLoadSite> loadSite = value.loadSite().map(site -> {
+                        ParsedMember member = parsed.declaredMembers().stream()
+                                .filter(candidate -> candidate.name().equals(site.memberName())
+                                        && candidate.descriptor().equals(site.memberDescriptor()))
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                        "Constant load site refers to an unknown member"));
+                        return new JavaConstantLoadSite(
+                                new JavaMemberSignature(owner, site.memberName(), site.memberDescriptor()),
+                                new BytecodeLocation(
+                                        location.resource(),
+                                        location.sourceFile(),
+                                        site.bytecodeOffset(),
+                                        lineNumbers(member.lineNumbers()).lineAt(site.bytecodeOffset())));
+                    });
+                    List<JvmType> referencedTypes = descriptorTypes(value.descriptor());
+                    if (handle.isPresent()) {
+                        List<JvmType> withOwner = new ArrayList<>(referencedTypes);
+                        withOwner.add(handle.orElseThrow().ownerType());
+                        referencedTypes = withOwner;
+                    }
+                    return new JavaConstantEvidence(
+                            JavaConstantEvidenceKind.valueOf(value.kind().name()),
+                            value.constantPoolIndex(),
+                            value.descriptor(),
+                            referencedTypes,
+                            handle,
+                            dynamic,
+                            loadSite);
+                })
+                .sorted()
+                .toList();
+        return new JavaConstantPoolEvidence(
+                constants,
+                parsed.constantPoolEvidence().originalEvidenceCount(),
+                parsed.constantPoolEvidence().truncated());
+    }
+
+    private static JavaDynamicConstant dynamicConstant(
+            dev.archunitjava.importer.ParsedDynamicConstant parsed) {
+        return new JavaDynamicConstant(
+                parsed.name(),
+                JvmDescriptors.parseField(parsed.descriptor()),
+                methodHandle(parsed.bootstrapMethod()),
+                parsed.bootstrapArguments().stream()
+                        .map(value -> new JavaBootstrapArgument(
+                                value.kind(),
+                                value.encodedValue(),
+                                value.methodHandle().map(TypeModelBuilder::methodHandle)))
+                        .toList(),
+                parsed.originalBootstrapArgumentCount(),
+                parsed.bootstrapArgumentsTruncated());
+    }
+
+    private static List<JvmType> descriptorTypes(String descriptor) {
+        if (!descriptor.startsWith("(")) return List.of(JvmDescriptors.parseField(descriptor));
+        JvmMethodType method = JvmDescriptors.parseMethod(descriptor);
+        List<JvmType> result = new ArrayList<>(method.parameterTypes());
+        if (!(method.returnType() instanceof JvmVoidType)) result.add(method.returnType());
+        return result;
     }
 
     private static List<JavaRecordComponent> recordComponents(

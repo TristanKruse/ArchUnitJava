@@ -25,7 +25,8 @@ public record ParsedClassFile(
         List<ParsedRecordComponent> recordComponents,
         boolean sealedDeclaration,
         List<String> permittedSubclassBinaryNames,
-        ParsedNestingMetadata nestingMetadata)
+        ParsedNestingMetadata nestingMetadata,
+        ParsedConstantPoolEvidence constantPoolEvidence)
         implements Comparable<ParsedClassFile> {
     public ParsedClassFile {
         if (binaryName == null || binaryName.isBlank()) {
@@ -78,6 +79,52 @@ public record ParsedClassFile(
             throw new IllegalArgumentException("Permitted subclasses require a sealed declaration");
         }
         Objects.requireNonNull(nestingMetadata, "nestingMetadata");
+        Objects.requireNonNull(constantPoolEvidence, "constantPoolEvidence");
+    }
+
+    public ParsedClassFile(
+            String binaryName,
+            int accessFlags,
+            int majorVersion,
+            int minorVersion,
+            boolean moduleDescriptor,
+            String resourceName,
+            ClassFileOrigin origin,
+            int precedence,
+            java.util.Optional<String> superclassBinaryName,
+            List<String> interfaceBinaryNames,
+            java.util.Optional<String> sourceFile,
+            List<ParsedMember> declaredMembers,
+            List<ParsedAnnotationOccurrence> annotations,
+            List<ParsedAnnotationDefault> annotationDefaults,
+            java.util.Optional<String> genericSignature,
+            boolean recordDeclaration,
+            List<ParsedRecordComponent> recordComponents,
+            boolean sealedDeclaration,
+            List<String> permittedSubclassBinaryNames,
+            ParsedNestingMetadata nestingMetadata) {
+        this(
+                binaryName,
+                accessFlags,
+                majorVersion,
+                minorVersion,
+                moduleDescriptor,
+                resourceName,
+                origin,
+                precedence,
+                superclassBinaryName,
+                interfaceBinaryNames,
+                sourceFile,
+                declaredMembers,
+                annotations,
+                annotationDefaults,
+                genericSignature,
+                recordDeclaration,
+                recordComponents,
+                sealedDeclaration,
+                permittedSubclassBinaryNames,
+                nestingMetadata,
+                ParsedConstantPoolEvidence.empty());
     }
 
     public ParsedClassFile(

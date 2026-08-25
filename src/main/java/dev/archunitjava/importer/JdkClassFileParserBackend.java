@@ -17,6 +17,11 @@ import java.lang.classfile.instruction.FieldInstruction;
 import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.classfile.instruction.InvokeDynamicInstruction;
 import java.lang.classfile.instruction.ThrowInstruction;
+import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantDynamicEntry;
+import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.lang.classfile.constantpool.MethodTypeEntry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
@@ -194,7 +199,8 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 !permittedSubclassAttributes.isEmpty(),
                 permittedSubclasses,
                 new ParsedNestingMetadata(
-                        innerClasses, enclosingMethods, nestHosts, nestMembers));
+                        innerClasses, enclosingMethods, nestHosts, nestMembers),
+                constantPoolEvidence(model));
     }
 
     private static String binaryName(String internalName) {
@@ -206,6 +212,86 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 .map(attribute -> attribute.signature().stringValue())
                 .sorted()
                 .findFirst();
+    }
+
+    private static ParsedConstantPoolEvidence constantPoolEvidence(ClassModel model) {
+        List<ParsedConstantEvidence> evidence = new ArrayList<>();
+        for (var entry : model.constantPool()) {
+            if (entry instanceof MethodTypeEntry methodType) {
+                evidence.add(new ParsedConstantEvidence(
+                        ParsedConstantEvidence.Kind.METHOD_TYPE,
+                        methodType.index(),
+                        methodType.descriptor().stringValue(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty()));
+            } else if (entry instanceof MethodHandleEntry handle) {
+                ParsedMethodHandle parsed = methodHandle(handle.asSymbol());
+                evidence.add(new ParsedConstantEvidence(
+                        ParsedConstantEvidence.Kind.METHOD_HANDLE,
+                        handle.index(),
+                        parsed.lookupDescriptor(),
+                        Optional.of(parsed),
+                        Optional.empty(),
+                        Optional.empty()));
+            } else if (entry instanceof ConstantDynamicEntry dynamic) {
+                List<ParsedBootstrapArgument> arguments = dynamic.bootstrap().arguments().stream()
+                        .map(value -> bootstrapArgument(value.constantValue()))
+                        .toList();
+                int retained = Math.min(arguments.size(), ParsedDynamicConstant.MAXIMUM_BOOTSTRAP_ARGUMENTS);
+                ParsedDynamicConstant parsed = new ParsedDynamicConstant(
+                        dynamic.name().stringValue(),
+                        dynamic.type().stringValue(),
+                        methodHandle(dynamic.bootstrap().bootstrapMethod().asSymbol()),
+                        arguments.stream().limit(retained).toList(),
+                        arguments.size(),
+                        arguments.size() > retained);
+                evidence.add(new ParsedConstantEvidence(
+                        ParsedConstantEvidence.Kind.DYNAMIC_CONSTANT,
+                        dynamic.index(),
+                        dynamic.type().stringValue(),
+                        Optional.empty(),
+                        Optional.of(parsed),
+                        Optional.empty()));
+            }
+        }
+        model.methods().forEach(method -> method.code().ifPresent(code ->
+                addClassLiteralEvidence(
+                        method.methodName().stringValue(),
+                        method.methodType().stringValue(),
+                        code,
+                        evidence)));
+        int originalCount = evidence.size();
+        return new ParsedConstantPoolEvidence(
+                evidence.stream()
+                        .sorted()
+                        .limit(ParsedConstantPoolEvidence.MAXIMUM_CONSTANTS)
+                        .toList(),
+                originalCount,
+                originalCount > ParsedConstantPoolEvidence.MAXIMUM_CONSTANTS);
+    }
+
+    private static void addClassLiteralEvidence(
+            String memberName,
+            String memberDescriptor,
+            java.lang.classfile.CodeModel code,
+            List<ParsedConstantEvidence> evidence) {
+        int bytecodeOffset = 0;
+        for (Object element : code) {
+            if (!(element instanceof Instruction instruction)) continue;
+            if (instruction instanceof ConstantInstruction.LoadConstantInstruction load
+                    && load.constantEntry() instanceof ClassEntry classEntry) {
+                evidence.add(new ParsedConstantEvidence(
+                        ParsedConstantEvidence.Kind.CLASS_LITERAL,
+                        classEntry.index(),
+                        classEntry.asSymbol().descriptorString(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new ParsedConstantLoadSite(
+                                memberName, memberDescriptor, bytecodeOffset))));
+            }
+            bytecodeOffset += instruction.sizeInBytes();
+        }
     }
 
     private static List<ParsedCodeAccess> codeAccesses(java.lang.classfile.CodeModel code) {

@@ -93,7 +93,8 @@ public final class ClassFileReader {
                     header.recordComponents(),
                     header.sealedDeclaration(),
                     header.permittedSubclassBinaryNames(),
-                    header.nestingMetadata()));
+                    header.nestingMetadata(),
+                    header.constantPoolEvidence()));
         } catch (RuntimeException failure) {
             diagnostics.add(failure(resource, ClassFileDiagnosticCode.MALFORMED_CLASS_FILE,
                     tracker.phase, failure));

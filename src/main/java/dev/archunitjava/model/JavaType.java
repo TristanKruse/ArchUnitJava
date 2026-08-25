@@ -29,6 +29,7 @@ public final class JavaType implements Comparable<JavaType> {
     private final boolean sealedDeclaration;
     private final List<JvmReferenceType> permittedSubclasses;
     private final JavaNesting nesting;
+    private final JavaConstantPoolEvidence constantPoolEvidence;
 
     JavaType(
             JavaTypeName name,
@@ -48,6 +49,7 @@ public final class JavaType implements Comparable<JavaType> {
             boolean sealedDeclaration,
             List<JvmReferenceType> permittedSubclasses,
             JavaNesting nesting,
+            JavaConstantPoolEvidence constantPoolEvidence,
             List<JavaMember> declaredMembers) {
         this.name = Objects.requireNonNull(name, "name");
         this.owner = new TypeOwner(name.packageName());
@@ -109,6 +111,7 @@ public final class JavaType implements Comparable<JavaType> {
             throw new IllegalArgumentException("Permitted subclasses require a sealed declaration");
         }
         this.nesting = Objects.requireNonNull(nesting, "nesting");
+        this.constantPoolEvidence = Objects.requireNonNull(constantPoolEvidence, "constantPoolEvidence");
         Objects.requireNonNull(declaredMembers, "declaredMembers");
         TreeSet<JavaMember> sortedMembers = new TreeSet<>();
         for (JavaMember member : declaredMembers) {
@@ -213,6 +216,10 @@ public final class JavaType implements Comparable<JavaType> {
 
     public JavaNesting nesting() {
         return nesting;
+    }
+
+    public JavaConstantPoolEvidence constantPoolEvidence() {
+        return constantPoolEvidence;
     }
 
     @Override

@@ -1,0 +1,24 @@
+# Populated from checked-in corpus fixtures; regenerate only through reviewed corpus changes.
+release:8|major:52|model-edges-sha256:c3f9a7efa33a1e06ba5a7954327421e113cac3faa120c315a609829239a518cb
+release:9|major:53|model-edges-sha256:5d22284d4a1097ee54d45efe4d9c0542e360fa90ddbcee848e9c66eeb74209eb
+release:10|major:54|model-edges-sha256:cc33aba13b9bd0b720253e674ae45d83b5f27ccaaaf80e0767c62f9afdc8c60f
+release:11|major:55|model-edges-sha256:0a749761c40c516ec67523ea0794649b79cfcab4adbef5049fbf81af8cd80a10
+release:12|major:56|model-edges-sha256:fbfbbc3995c2ac4a421aca43c892f3081ea38a331920c9b623938288195f34d9
+release:13|major:57|model-edges-sha256:81f69888c2c3157ffee6b586f875481a34a145401566f033837d7980dadea61d
+release:14|major:58|model-edges-sha256:e7d5aeffe1a891e1f1ff3d15a3b43c90cf08a248141f9c2e5ffc95168b8522a0
+release:15|major:59|model-edges-sha256:f2e1beb4068baa6cfbf64cf636659649c0900268b80646104a5eefcab2f5300f
+release:16|major:60|model-edges-sha256:744ef080b41a0200c54307b4858f56654ec8eb5acd01ee2653d084741a66637d
+release:17|major:61|model-edges-sha256:5c0c64ce6f42542e99a3a73049d6881d545a9ee2760139d6d6526d41e8ecb552
+release:18|major:62|model-edges-sha256:94df6ad0776409c998b7a06f96c5322e6a6413ad29e68f01a486df5257a1fda4
+release:19|major:63|model-edges-sha256:4a388dc3207f515cc312ddabe08461edd65a036c83dcafaa5ca063f31d47c66e
+release:20|major:64|model-edges-sha256:267ccd2d64d7a7ffe9c0274c580f1fe362062021e7e416d397cc89d93fe8f540
+release:21|major:65|model-edges-sha256:5c838269c60e1ae02f2023889684234512782b9277a5a31b121a53e017e52e10
+release:22|major:66|model-edges-sha256:a93fb55b678e0ad71cc720c9be60b93001d6ea745a8535451c0fa46fa4a66dcf
+release:23|major:67|model-edges-sha256:1c1e746df1c549c5bd5f1bf4e174efdc36434371d0bfde17912f772674a8f784
+release:24|major:68|model-edges-sha256:aa7aa98391a558c02ddb2a1c580020f126ef6b245834aabfe4597e3c770db47a
+release:25|major:69|model-edges-sha256:9a7de2be032dd1fbd85e0097169d9bc9006677e6ef188594a3a42e5b8ecd0f83
+detail-java25|type=corpus.JavacFixture;kind=CLASS;major=69;annotations=[java.lang.Deprecated];record-components=[];permitted=[];members=[<init>()V[PUBLIC], lambda()Ljava/lang/Runnable;[PUBLIC], lambda$lambda$0()V[PRIVATE, SYNTHETIC], messageLjava/lang/String;[PUBLIC]];declarations=[java.lang.Deprecated/ANNOTATION/[ANNOTATION_TYPE], java.lang.Object/DECLARED_RELATIONSHIP/[SUPERCLASS], java.lang.Runnable/ERASED/[METHOD_RETURN_DESCRIPTOR], java.lang.String/ERASED/[FIELD_DESCRIPTOR]];accesses=[<init>->Ljava/lang/Object;.<init>()V/CONSTRUCTOR_CALL@1, <init>->Lcorpus/JavacFixture;.messageLjava/lang/String;/FIELD_WRITE@7, lambda$lambda$0->Ljava/lang/System;.outLjava/io/PrintStream;/FIELD_READ@0, lambda$lambda$0->Lcorpus/JavacFixture;.messageLjava/lang/String;/FIELD_READ@4, lambda$lambda$0->Ljava/io/PrintStream;.println(Ljava/lang/String;)V/METHOD_CALL@7];dynamic=[lambda->LAMBDA_METAFACTORY/Ljava/lang/invoke/LambdaMetafactory;.metafactory]
+module|name=corpus.module;flags=0;requires=[JavaModuleRequire[moduleName=java.base, flags=32768, compiledVersion=Optional[9]]];exports=[];opens=[];uses=[];provides=[]
+record|type=corpus.ModernFixture;kind=RECORD;major=61;annotations=[];record-components=[valueLjava/lang/String;];permitted=[];members=[<init>(Ljava/lang/String;)V[PUBLIC], equals(Ljava/lang/Object;)Z[PUBLIC, FINAL], hashCode()I[PUBLIC, FINAL], run()V[PUBLIC], toString()Ljava/lang/String;[PUBLIC, FINAL], value()Ljava/lang/String;[PUBLIC], valueLjava/lang/String;[PRIVATE, FINAL]];declarations=[java.lang.Object/ERASED/[METHOD_PARAMETER_DESCRIPTOR], java.lang.Record/DECLARED_RELATIONSHIP/[SUPERCLASS], java.lang.Runnable/DECLARED_RELATIONSHIP/[INTERFACE], java.lang.String/ERASED/[FIELD_DESCRIPTOR, METHOD_PARAMETER_DESCRIPTOR, METHOD_RETURN_DESCRIPTOR, METHOD_RETURN_DESCRIPTOR, RECORD_COMPONENT_DESCRIPTOR]];accesses=[<init>->Ljava/lang/Record;.<init>()V/CONSTRUCTOR_CALL@1, <init>->Lcorpus/ModernFixture;.valueLjava/lang/String;/FIELD_WRITE@6, run->Ljava/lang/System;.outLjava/io/PrintStream;/FIELD_READ@0, run->Lcorpus/ModernFixture;.valueLjava/lang/String;/FIELD_READ@4, run->Ljava/io/PrintStream;.println(Ljava/lang/String;)V/METHOD_CALL@7, value->Lcorpus/ModernFixture;.valueLjava/lang/String;/FIELD_READ@1];dynamic=[equals->GENERIC/Ljava/lang/runtime/ObjectMethods;.bootstrap, hashCode->GENERIC/Ljava/lang/runtime/ObjectMethods;.bootstrap, toString->GENERIC/Ljava/lang/runtime/ObjectMethods;.bootstrap]
+sealed|type=corpus.Shape;kind=INTERFACE;major=61;annotations=[];record-components=[];permitted=[corpus.Circle];members=[];declarations=[corpus.Circle/DECLARED_RELATIONSHIP/[PERMITTED_SUBCLASS]];accesses=[];dynamic=[]
+malformed|[MALFORMED_CLASS_FILE]

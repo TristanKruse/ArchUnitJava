@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.jar.Attributes;
@@ -42,24 +43,90 @@ public final class ClassPathAssembler {
         InputEnumerationResult enumerated = new ClassFileInputEnumerator(options.enumerationOptions())
                 .enumerate(effectiveInputs);
         diagnostics.addAll(enumerated.diagnostics());
-        TreeMap<String, List<ClassFileResource>> groups = new TreeMap<>();
+        TreeMap<String, List<Candidate>> groups = new TreeMap<>();
+        Map<String, Boolean> multiReleaseJars = new TreeMap<>();
         for (ClassFileResource resource : enumerated.resources()) {
+            Candidate candidate = candidate(resource, diagnostics, multiReleaseJars);
+            if (candidate == null) continue;
             String scope = lookupScope(resource.origin());
-            groups.computeIfAbsent(scope + "\0" + resource.name(), ignored -> new ArrayList<>())
-                    .add(resource);
+            groups.computeIfAbsent(scope + "\0" + candidate.logicalName(), ignored -> new ArrayList<>())
+                    .add(candidate);
         }
         List<SelectedClassResource> selections = groups.values().stream()
                 .map(values -> {
-                    List<ClassFileResource> ordered = values.stream().sorted().toList();
-                    ClassFileResource winner = ordered.getFirst();
+                    List<Candidate> ordered = values.stream().sorted().toList();
+                    Candidate winner = ordered.getFirst();
                     return new SelectedClassResource(
-                            lookupScope(winner.origin()),
-                            winner.name(),
-                            winner,
-                            ordered.subList(1, ordered.size()));
+                            lookupScope(winner.resource().origin()),
+                            winner.logicalName(),
+                            winner.resource(),
+                            winner.release(),
+                            ordered.subList(1, ordered.size()).stream()
+                                    .map(Candidate::resource)
+                                    .toList());
                 })
                 .toList();
         return new ClassPathAssemblyResult(selections, diagnostics);
+    }
+
+    private Candidate candidate(
+            ClassFileResource resource,
+            List<InputDiagnostic> diagnostics,
+            Map<String, Boolean> multiReleaseJars) {
+        if (resource.origin().kind() != ClassFileInput.Kind.JAR
+                || !resource.name().startsWith("META-INF/versions/")) {
+            return new Candidate(resource, resource.name(), 0);
+        }
+        String remainder = resource.name().substring("META-INF/versions/".length());
+        int separator = remainder.indexOf('/');
+        String versionText = separator < 0 ? remainder : remainder.substring(0, separator);
+        String logicalName = separator < 0 ? "" : remainder.substring(separator + 1);
+        if (!versionText.matches("[1-9][0-9]*")
+                || logicalName.isBlank()
+                || logicalName.startsWith("META-INF/")) {
+            ignoredVersionedEntry(resource, diagnostics, "malformed-versioned-path");
+            return null;
+        }
+        int release;
+        try {
+            release = Integer.parseInt(versionText);
+        } catch (NumberFormatException failure) {
+            ignoredVersionedEntry(resource, diagnostics, "version-overflow");
+            return null;
+        }
+        if (release < 9) {
+            ignoredVersionedEntry(resource, diagnostics, "release-below-9");
+            return null;
+        }
+        boolean multiRelease = multiReleaseJars.computeIfAbsent(
+                resource.origin().input(),
+                input -> isMultiReleaseJar(Path.of(input), diagnostics));
+        if (!multiRelease) {
+            ignoredVersionedEntry(resource, diagnostics, "manifest-not-multi-release");
+            return null;
+        }
+        if (release > options.targetJavaRelease()) {
+            ignoredVersionedEntry(resource, diagnostics, "release-above-target");
+            return null;
+        }
+        return new Candidate(resource, logicalName, release);
+    }
+
+    private boolean isMultiReleaseJar(Path jar, List<InputDiagnostic> diagnostics) {
+        return manifest(jar, diagnostics)
+                .map(value -> value.getMainAttributes()
+                        .getValue(Attributes.Name.MULTI_RELEASE))
+                .map(String::trim)
+                .filter(value -> value.equalsIgnoreCase("true"))
+                .isPresent();
+    }
+
+    private static void ignoredVersionedEntry(
+            ClassFileResource resource, List<InputDiagnostic> diagnostics, String reason) {
+        diagnostics.add(new InputDiagnostic(
+                InputDiagnosticCode.MULTI_RELEASE_ENTRY_IGNORED,
+                resource.origin().input(),
+                Map.of("entry", resource.name(), "reason", reason)));
     }
 
     private List<ClassFileInput> expandManifestClassPath(
@@ -125,15 +192,23 @@ public final class ClassPathAssembler {
     }
 
     private List<String> manifestClassPath(Path jar, List<InputDiagnostic> diagnostics) {
+        return manifest(jar, diagnostics)
+                .map(value -> value.getMainAttributes().getValue(Attributes.Name.CLASS_PATH))
+                .filter(value -> !value.isBlank())
+                .map(value -> List.of(value.trim().split("\\s+")))
+                .orElse(List.of());
+    }
+
+    private Optional<Manifest> manifest(Path jar, List<InputDiagnostic> diagnostics) {
         if (!Files.isRegularFile(jar, LinkOption.NOFOLLOW_LINKS) || Files.isSymbolicLink(jar)) {
-            return List.of();
+            return Optional.empty();
         }
         try (ZipFile zip = new ZipFile(jar.toFile())) {
             ZipEntry entry = zip.getEntry(MANIFEST_NAME);
-            if (entry == null) return List.of();
+            if (entry == null) return Optional.empty();
             if (entry.getSize() > options.maximumManifestBytes()) {
                 diagnostics.add(limit(jar, "manifest-bytes", options.maximumManifestBytes()));
-                return List.of();
+                return Optional.empty();
             }
             byte[] bytes;
             try (var input = zip.getInputStream(entry)) {
@@ -141,20 +216,15 @@ public final class ClassPathAssembler {
             }
             if (bytes.length > options.maximumManifestBytes()) {
                 diagnostics.add(limit(jar, "manifest-bytes", options.maximumManifestBytes()));
-                return List.of();
+                return Optional.empty();
             }
-            String value = new Manifest(new ByteArrayInputStream(bytes))
-                    .getMainAttributes()
-                    .getValue(Attributes.Name.CLASS_PATH);
-            return value == null || value.isBlank()
-                    ? List.of()
-                    : List.of(value.trim().split("\\s+"));
+            return Optional.of(new Manifest(new ByteArrayInputStream(bytes)));
         } catch (IOException | RuntimeException failure) {
             diagnostics.add(new InputDiagnostic(
                     InputDiagnosticCode.IO_FAILURE,
                     jar.toString(),
                     Map.of("operation", "manifest-read")));
-            return List.of();
+            return Optional.empty();
         }
     }
 
@@ -198,5 +268,25 @@ public final class ClassPathAssembler {
                 InputDiagnosticCode.RESOURCE_LIMIT_EXCEEDED,
                 input.toString(),
                 Map.of("limit", kind + ":" + maximum));
+    }
+
+    private record Candidate(ClassFileResource resource, String logicalName, int release)
+            implements Comparable<Candidate> {
+        private Candidate {
+            Objects.requireNonNull(resource, "resource");
+            if (logicalName == null || logicalName.isBlank()) {
+                throw new IllegalArgumentException("logicalName must not be blank");
+            }
+            if (release < 0) throw new IllegalArgumentException("release must not be negative");
+        }
+
+        @Override
+        public int compareTo(Candidate other) {
+            int result = Integer.compare(resource.precedence(), other.resource.precedence());
+            if (result != 0) return result;
+            result = Integer.compare(other.release, release);
+            if (result != 0) return result;
+            return resource.compareTo(other.resource);
+        }
     }
 }

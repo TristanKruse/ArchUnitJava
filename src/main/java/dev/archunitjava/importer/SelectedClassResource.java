@@ -8,6 +8,7 @@ public record SelectedClassResource(
         String lookupScope,
         String logicalName,
         ClassFileResource winner,
+        int selectedRelease,
         List<ClassFileResource> shadowedAlternatives)
         implements Comparable<SelectedClassResource> {
     public SelectedClassResource {
@@ -18,6 +19,7 @@ public record SelectedClassResource(
             throw new IllegalArgumentException("logicalName must identify a class resource");
         }
         Objects.requireNonNull(winner, "winner");
+        if (selectedRelease < 0) throw new IllegalArgumentException("selectedRelease must not be negative");
         Objects.requireNonNull(shadowedAlternatives, "shadowedAlternatives");
         shadowedAlternatives = shadowedAlternatives.stream()
                 .map(value -> Objects.requireNonNull(value, "shadowedAlternative"))

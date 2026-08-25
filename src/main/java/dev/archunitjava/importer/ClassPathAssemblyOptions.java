@@ -9,6 +9,7 @@ public record ClassPathAssemblyOptions(
         int maximumManifestClassPathEntries,
         int maximumManifestDepth,
         int maximumManifestBytes,
+        int targetJavaRelease,
         InputEnumerationOptions enumerationOptions) {
     public static final int DEFAULT_MAXIMUM_MANIFEST_ENTRIES = 256;
     public static final int DEFAULT_MAXIMUM_MANIFEST_DEPTH = 8;
@@ -25,7 +26,27 @@ public record ClassPathAssemblyOptions(
         if (maximumManifestBytes < 1) {
             throw new IllegalArgumentException("maximumManifestBytes must be positive");
         }
+        if (targetJavaRelease < 1) {
+            throw new IllegalArgumentException("targetJavaRelease must be positive");
+        }
         Objects.requireNonNull(enumerationOptions, "enumerationOptions");
+    }
+
+    public ClassPathAssemblyOptions(
+            ClassPathAssemblyMode mode,
+            boolean followManifestClassPath,
+            int maximumManifestClassPathEntries,
+            int maximumManifestDepth,
+            int maximumManifestBytes,
+            InputEnumerationOptions enumerationOptions) {
+        this(
+                mode,
+                followManifestClassPath,
+                maximumManifestClassPathEntries,
+                maximumManifestDepth,
+                maximumManifestBytes,
+                Runtime.version().feature(),
+                enumerationOptions);
     }
 
     public static ClassPathAssemblyOptions classPathDefaults() {
@@ -35,6 +56,7 @@ public record ClassPathAssemblyOptions(
                 DEFAULT_MAXIMUM_MANIFEST_ENTRIES,
                 DEFAULT_MAXIMUM_MANIFEST_DEPTH,
                 DEFAULT_MAXIMUM_MANIFEST_BYTES,
+                Runtime.version().feature(),
                 InputEnumerationOptions.defaults());
     }
 
@@ -45,6 +67,7 @@ public record ClassPathAssemblyOptions(
                 DEFAULT_MAXIMUM_MANIFEST_ENTRIES,
                 DEFAULT_MAXIMUM_MANIFEST_DEPTH,
                 DEFAULT_MAXIMUM_MANIFEST_BYTES,
+                Runtime.version().feature(),
                 InputEnumerationOptions.defaults());
     }
 
@@ -55,6 +78,18 @@ public record ClassPathAssemblyOptions(
                 maximumManifestClassPathEntries,
                 maximumManifestDepth,
                 maximumManifestBytes,
+                targetJavaRelease,
+                enumerationOptions);
+    }
+
+    public ClassPathAssemblyOptions withTargetJavaRelease(int release) {
+        return new ClassPathAssemblyOptions(
+                mode,
+                followManifestClassPath,
+                maximumManifestClassPathEntries,
+                maximumManifestDepth,
+                maximumManifestBytes,
+                release,
                 enumerationOptions);
     }
 }

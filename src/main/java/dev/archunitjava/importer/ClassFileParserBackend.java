@@ -22,7 +22,8 @@ interface ClassFileParserBackend {
             boolean sealedDeclaration,
             java.util.List<String> permittedSubclassBinaryNames,
             ParsedNestingMetadata nestingMetadata,
-            ParsedConstantPoolEvidence constantPoolEvidence) {}
+            ParsedConstantPoolEvidence constantPoolEvidence,
+            java.util.Optional<ParsedModuleDescriptor> module) {}
 
     @FunctionalInterface
     interface TraversalObserver {

@@ -26,7 +26,8 @@ public record ParsedClassFile(
         boolean sealedDeclaration,
         List<String> permittedSubclassBinaryNames,
         ParsedNestingMetadata nestingMetadata,
-        ParsedConstantPoolEvidence constantPoolEvidence)
+        ParsedConstantPoolEvidence constantPoolEvidence,
+        java.util.Optional<ParsedModuleDescriptor> module)
         implements Comparable<ParsedClassFile> {
     public ParsedClassFile {
         if (binaryName == null || binaryName.isBlank()) {
@@ -80,6 +81,57 @@ public record ParsedClassFile(
         }
         Objects.requireNonNull(nestingMetadata, "nestingMetadata");
         Objects.requireNonNull(constantPoolEvidence, "constantPoolEvidence");
+        Objects.requireNonNull(module, "module");
+        if (module.isPresent() && !moduleDescriptor) {
+            throw new IllegalArgumentException("A Module attribute requires a module descriptor");
+        }
+    }
+
+    public ParsedClassFile(
+            String binaryName,
+            int accessFlags,
+            int majorVersion,
+            int minorVersion,
+            boolean moduleDescriptor,
+            String resourceName,
+            ClassFileOrigin origin,
+            int precedence,
+            java.util.Optional<String> superclassBinaryName,
+            List<String> interfaceBinaryNames,
+            java.util.Optional<String> sourceFile,
+            List<ParsedMember> declaredMembers,
+            List<ParsedAnnotationOccurrence> annotations,
+            List<ParsedAnnotationDefault> annotationDefaults,
+            java.util.Optional<String> genericSignature,
+            boolean recordDeclaration,
+            List<ParsedRecordComponent> recordComponents,
+            boolean sealedDeclaration,
+            List<String> permittedSubclassBinaryNames,
+            ParsedNestingMetadata nestingMetadata,
+            ParsedConstantPoolEvidence constantPoolEvidence) {
+        this(
+                binaryName,
+                accessFlags,
+                majorVersion,
+                minorVersion,
+                moduleDescriptor,
+                resourceName,
+                origin,
+                precedence,
+                superclassBinaryName,
+                interfaceBinaryNames,
+                sourceFile,
+                declaredMembers,
+                annotations,
+                annotationDefaults,
+                genericSignature,
+                recordDeclaration,
+                recordComponents,
+                sealedDeclaration,
+                permittedSubclassBinaryNames,
+                nestingMetadata,
+                constantPoolEvidence,
+                java.util.Optional.empty());
     }
 
     public ParsedClassFile(
@@ -124,7 +176,8 @@ public record ParsedClassFile(
                 sealedDeclaration,
                 permittedSubclassBinaryNames,
                 nestingMetadata,
-                ParsedConstantPoolEvidence.empty());
+                ParsedConstantPoolEvidence.empty(),
+                java.util.Optional.empty());
     }
 
     public ParsedClassFile(

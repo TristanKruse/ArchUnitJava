@@ -8,12 +8,21 @@ import java.util.TreeSet;
 /** Immutable type-model output, retaining reader and adaptation diagnostics separately. */
 public record TypeModelResult(
         List<JavaType> types,
+        List<JavaModule> modules,
         List<ClassFileDiagnostic> classFileDiagnostics,
         List<TypeModelDiagnostic> diagnostics) {
     public TypeModelResult {
         types = sorted(types, "type");
+        modules = sorted(modules, "module");
         classFileDiagnostics = sorted(classFileDiagnostics, "classFileDiagnostic");
         diagnostics = sorted(diagnostics, "diagnostic");
+    }
+
+    public TypeModelResult(
+            List<JavaType> types,
+            List<ClassFileDiagnostic> classFileDiagnostics,
+            List<TypeModelDiagnostic> diagnostics) {
+        this(types, List.of(), classFileDiagnostics, diagnostics);
     }
 
     public JavaPackageIndex packages() {

@@ -34,25 +34,30 @@ public final class TypeModelBuilder {
     public TypeModelResult build(ClassFileReadResult readResult) {
         Objects.requireNonNull(readResult, "readResult");
         List<JavaType> types = new ArrayList<>();
+        List<JavaModule> modules = new ArrayList<>();
         List<TypeModelDiagnostic> diagnostics = new ArrayList<>();
         for (ParsedClassFile parsed : readResult.classes()) {
-            adapt(parsed, types, diagnostics);
+            if (parsed.moduleDescriptor() || has(parsed.accessFlags(), ClassFile.ACC_MODULE)) {
+                if (parsed.module().isPresent()) {
+                    modules.add(module(parsed));
+                } else {
+                    diagnostics.add(new TypeModelDiagnostic(
+                            TypeModelDiagnosticCode.MODULE_DESCRIPTOR_IS_NOT_A_TYPE,
+                            parsed.resourceName(),
+                            parsed.origin(),
+                            Map.of("binaryName", parsed.binaryName())));
+                }
+            } else {
+                adapt(parsed, types, diagnostics);
+            }
         }
-        return new TypeModelResult(types, readResult.diagnostics(), diagnostics);
+        return new TypeModelResult(types, modules, readResult.diagnostics(), diagnostics);
     }
 
     private static void adapt(
             ParsedClassFile parsed,
             List<JavaType> types,
             List<TypeModelDiagnostic> diagnostics) {
-        if (parsed.moduleDescriptor() || has(parsed.accessFlags(), ClassFile.ACC_MODULE)) {
-            diagnostics.add(new TypeModelDiagnostic(
-                    TypeModelDiagnosticCode.MODULE_DESCRIPTOR_IS_NOT_A_TYPE,
-                    parsed.resourceName(),
-                    parsed.origin(),
-                    Map.of("binaryName", parsed.binaryName())));
-            return;
-        }
         JavaTypeName name;
         try {
             name = new JavaTypeName(parsed.binaryName());
@@ -105,6 +110,44 @@ public final class TypeModelBuilder {
                         parsed.annotations(),
                         parsed.annotationDefaults(),
                         location)));
+    }
+
+    private static JavaModule module(ParsedClassFile parsed) {
+        dev.archunitjava.importer.ParsedModuleDescriptor module = parsed.module().orElseThrow();
+        DeclarationLocation location = new DeclarationLocation(
+                ClassResourceLocation.from(parsed.origin(), parsed.precedence()),
+                parsed.sourceFile().flatMap(SourceFileName::fromUntrusted));
+        return new JavaModule(
+                JavaModuleIdentity.explicit(module.moduleName()),
+                module.flags(),
+                module.version(),
+                module.requires().stream()
+                        .map(value -> new JavaModuleRequire(
+                                value.moduleName(), value.flags(), value.compiledVersion()))
+                        .toList(),
+                module.exports().stream()
+                        .map(value -> new JavaModulePackageDirective(
+                                JavaModulePackageDirectiveKind.EXPORTS,
+                                JavaPackageName.named(value.packageName()),
+                                value.flags(),
+                                value.targetModules()))
+                        .toList(),
+                module.opens().stream()
+                        .map(value -> new JavaModulePackageDirective(
+                                JavaModulePackageDirectiveKind.OPENS,
+                                JavaPackageName.named(value.packageName()),
+                                value.flags(),
+                                value.targetModules()))
+                        .toList(),
+                module.usesBinaryNames().stream().map(JvmReferenceType::new).toList(),
+                module.provides().stream()
+                        .map(value -> new JavaModuleProvide(
+                                new JvmReferenceType(value.serviceBinaryName()),
+                                value.providerBinaryNames().stream()
+                                        .map(JvmReferenceType::new)
+                                        .toList()))
+                        .toList(),
+                location);
     }
 
     private static JavaConstantPoolEvidence constantPoolEvidence(

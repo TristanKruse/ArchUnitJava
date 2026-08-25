@@ -200,7 +200,8 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 permittedSubclasses,
                 new ParsedNestingMetadata(
                         innerClasses, enclosingMethods, nestHosts, nestMembers),
-                constantPoolEvidence(model));
+                constantPoolEvidence(model),
+                moduleDescriptor(model));
     }
 
     private static String binaryName(String internalName) {
@@ -211,6 +212,49 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
         return element.findAttributes(Attributes.signature()).stream()
                 .map(attribute -> attribute.signature().stringValue())
                 .sorted()
+                .findFirst();
+    }
+
+    private static Optional<ParsedModuleDescriptor> moduleDescriptor(ClassModel model) {
+        return model.findAttributes(Attributes.module()).stream()
+                .map(attribute -> new ParsedModuleDescriptor(
+                        attribute.moduleName().name().stringValue(),
+                        attribute.moduleFlagsMask(),
+                        attribute.moduleVersion().map(value -> value.stringValue()),
+                        attribute.requires().stream()
+                                .map(value -> new ParsedModuleRequire(
+                                        value.requires().name().stringValue(),
+                                        value.requiresFlagsMask(),
+                                        value.requiresVersion().map(version -> version.stringValue())))
+                                .toList(),
+                        attribute.exports().stream()
+                                .map(value -> new ParsedModulePackageDirective(
+                                        ParsedModulePackageDirective.Kind.EXPORTS,
+                                        binaryName(value.exportedPackage().name().stringValue()),
+                                        value.exportsFlagsMask(),
+                                        value.exportsTo().stream()
+                                                .map(target -> target.name().stringValue())
+                                                .toList()))
+                                .toList(),
+                        attribute.opens().stream()
+                                .map(value -> new ParsedModulePackageDirective(
+                                        ParsedModulePackageDirective.Kind.OPENS,
+                                        binaryName(value.openedPackage().name().stringValue()),
+                                        value.opensFlagsMask(),
+                                        value.opensTo().stream()
+                                                .map(target -> target.name().stringValue())
+                                                .toList()))
+                                .toList(),
+                        attribute.uses().stream()
+                                .map(value -> binaryName(value.asInternalName()))
+                                .toList(),
+                        attribute.provides().stream()
+                                .map(value -> new ParsedModuleProvide(
+                                        binaryName(value.provides().asInternalName()),
+                                        value.providesWith().stream()
+                                                .map(provider -> binaryName(provider.asInternalName()))
+                                                .toList()))
+                                .toList()))
                 .findFirst();
     }
 

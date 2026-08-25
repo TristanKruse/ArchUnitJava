@@ -96,6 +96,7 @@ public final class TypeModelBuilder {
                 recordComponents(name, parsed, location),
                 parsed.sealedDeclaration(),
                 parsed.permittedSubclassBinaryNames().stream().map(JvmReferenceType::new).toList(),
+                JavaNesting.from(name, parsed.nestingMetadata()),
                 members(
                         name,
                         parsed.declaredMembers(),

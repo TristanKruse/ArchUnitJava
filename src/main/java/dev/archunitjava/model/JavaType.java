@@ -28,6 +28,7 @@ public final class JavaType implements Comparable<JavaType> {
     private final List<JavaRecordComponent> recordComponents;
     private final boolean sealedDeclaration;
     private final List<JvmReferenceType> permittedSubclasses;
+    private final JavaNesting nesting;
 
     JavaType(
             JavaTypeName name,
@@ -46,6 +47,7 @@ public final class JavaType implements Comparable<JavaType> {
             List<JavaRecordComponent> recordComponents,
             boolean sealedDeclaration,
             List<JvmReferenceType> permittedSubclasses,
+            JavaNesting nesting,
             List<JavaMember> declaredMembers) {
         this.name = Objects.requireNonNull(name, "name");
         this.owner = new TypeOwner(name.packageName());
@@ -106,6 +108,7 @@ public final class JavaType implements Comparable<JavaType> {
         if (!sealedDeclaration && !this.permittedSubclasses.isEmpty()) {
             throw new IllegalArgumentException("Permitted subclasses require a sealed declaration");
         }
+        this.nesting = Objects.requireNonNull(nesting, "nesting");
         Objects.requireNonNull(declaredMembers, "declaredMembers");
         TreeSet<JavaMember> sortedMembers = new TreeSet<>();
         for (JavaMember member : declaredMembers) {
@@ -202,6 +205,10 @@ public final class JavaType implements Comparable<JavaType> {
     /** Declared permitted subclasses; this is not a list of observed direct subclasses. */
     public List<JvmReferenceType> permittedSubclasses() {
         return permittedSubclasses;
+    }
+
+    public JavaNesting nesting() {
+        return nesting;
     }
 
     @Override

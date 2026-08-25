@@ -20,7 +20,8 @@ interface ClassFileParserBackend {
             boolean recordDeclaration,
             java.util.List<ParsedRecordComponent> recordComponents,
             boolean sealedDeclaration,
-            java.util.List<String> permittedSubclassBinaryNames) {}
+            java.util.List<String> permittedSubclassBinaryNames,
+            ParsedNestingMetadata nestingMetadata) {}
 
     @FunctionalInterface
     interface TraversalObserver {

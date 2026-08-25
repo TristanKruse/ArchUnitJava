@@ -24,7 +24,8 @@ public record ParsedClassFile(
         boolean recordDeclaration,
         List<ParsedRecordComponent> recordComponents,
         boolean sealedDeclaration,
-        List<String> permittedSubclassBinaryNames)
+        List<String> permittedSubclassBinaryNames,
+        ParsedNestingMetadata nestingMetadata)
         implements Comparable<ParsedClassFile> {
     public ParsedClassFile {
         if (binaryName == null || binaryName.isBlank()) {
@@ -76,6 +77,7 @@ public record ParsedClassFile(
         if (!sealedDeclaration && !permittedSubclassBinaryNames.isEmpty()) {
             throw new IllegalArgumentException("Permitted subclasses require a sealed declaration");
         }
+        Objects.requireNonNull(nestingMetadata, "nestingMetadata");
     }
 
     public ParsedClassFile(
@@ -106,7 +108,8 @@ public record ParsedClassFile(
                 false,
                 List.of(),
                 false,
-                List.of());
+                List.of(),
+                ParsedNestingMetadata.empty());
     }
 
     public ParsedClassFile(
@@ -139,7 +142,8 @@ public record ParsedClassFile(
                 false,
                 List.of(),
                 false,
-                List.of());
+                List.of(),
+                ParsedNestingMetadata.empty());
     }
 
     public ParsedClassFile(
@@ -174,7 +178,8 @@ public record ParsedClassFile(
                 false,
                 List.of(),
                 false,
-                List.of());
+                List.of(),
+                ParsedNestingMetadata.empty());
     }
 
     public ParsedClassFile(
@@ -211,7 +216,8 @@ public record ParsedClassFile(
                 false,
                 List.of(),
                 false,
-                List.of());
+                List.of(),
+                ParsedNestingMetadata.empty());
     }
 
     public ParsedClassFile(
@@ -249,7 +255,51 @@ public record ParsedClassFile(
                 false,
                 List.of(),
                 false,
-                List.of());
+                List.of(),
+                ParsedNestingMetadata.empty());
+    }
+
+    public ParsedClassFile(
+            String binaryName,
+            int accessFlags,
+            int majorVersion,
+            int minorVersion,
+            boolean moduleDescriptor,
+            String resourceName,
+            ClassFileOrigin origin,
+            int precedence,
+            java.util.Optional<String> superclassBinaryName,
+            List<String> interfaceBinaryNames,
+            java.util.Optional<String> sourceFile,
+            List<ParsedMember> declaredMembers,
+            List<ParsedAnnotationOccurrence> annotations,
+            List<ParsedAnnotationDefault> annotationDefaults,
+            java.util.Optional<String> genericSignature,
+            boolean recordDeclaration,
+            List<ParsedRecordComponent> recordComponents,
+            boolean sealedDeclaration,
+            List<String> permittedSubclassBinaryNames) {
+        this(
+                binaryName,
+                accessFlags,
+                majorVersion,
+                minorVersion,
+                moduleDescriptor,
+                resourceName,
+                origin,
+                precedence,
+                superclassBinaryName,
+                interfaceBinaryNames,
+                sourceFile,
+                declaredMembers,
+                annotations,
+                annotationDefaults,
+                genericSignature,
+                recordDeclaration,
+                recordComponents,
+                sealedDeclaration,
+                permittedSubclassBinaryNames,
+                ParsedNestingMetadata.empty());
     }
 
     private static <T extends Comparable<? super T>> List<T> sortedCopy(

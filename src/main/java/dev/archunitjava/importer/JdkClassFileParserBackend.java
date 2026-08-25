@@ -131,6 +131,32 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 .map(entry -> entry.asInternalName().replace('/', '.'))
                 .sorted()
                 .toList();
+        List<ParsedInnerClass> innerClasses = model.findAttributes(Attributes.innerClasses()).stream()
+                .flatMap(attribute -> attribute.classes().stream())
+                .map(entry -> new ParsedInnerClass(
+                        binaryName(entry.innerClass().asInternalName()),
+                        entry.outerClass().map(value -> binaryName(value.asInternalName())),
+                        entry.innerName().map(value -> value.stringValue()),
+                        entry.flagsMask()))
+                .sorted()
+                .toList();
+        List<ParsedEnclosingMethod> enclosingMethods = model
+                .findAttributes(Attributes.enclosingMethod()).stream()
+                .map(attribute -> new ParsedEnclosingMethod(
+                        binaryName(attribute.enclosingClass().asInternalName()),
+                        attribute.enclosingMethodName().map(value -> value.stringValue()),
+                        attribute.enclosingMethodType().map(value -> value.stringValue())))
+                .sorted()
+                .toList();
+        List<String> nestHosts = model.findAttributes(Attributes.nestHost()).stream()
+                .map(attribute -> binaryName(attribute.nestHost().asInternalName()))
+                .sorted()
+                .toList();
+        List<String> nestMembers = model.findAttributes(Attributes.nestMembers()).stream()
+                .flatMap(attribute -> attribute.nestMembers().stream())
+                .map(entry -> binaryName(entry.asInternalName()))
+                .sorted()
+                .toList();
         return new ParsedClassHeader(
                 binaryName,
                 model.flags().flagsMask(),
@@ -150,7 +176,13 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                 !model.findAttributes(Attributes.record()).isEmpty(),
                 List.copyOf(recordComponents),
                 !permittedSubclassAttributes.isEmpty(),
-                permittedSubclasses);
+                permittedSubclasses,
+                new ParsedNestingMetadata(
+                        innerClasses, enclosingMethods, nestHosts, nestMembers));
+    }
+
+    private static String binaryName(String internalName) {
+        return internalName.replace('/', '.');
     }
 
     private static Optional<String> signature(AttributedElement element) {

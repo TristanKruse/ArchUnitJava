@@ -78,6 +78,11 @@ public final class PackageSelector {
         return description;
     }
 
+    boolean matches(JavaPackage value, TypeSelectionContext context) {
+        return matcher.matches(Objects.requireNonNull(value, "package"),
+                Objects.requireNonNull(context, "context"));
+    }
+
     public PackageSelection selectFrom(JavaPackageIndex index) {
         Objects.requireNonNull(index, "index");
         List<JavaPackage> packages = index.all();

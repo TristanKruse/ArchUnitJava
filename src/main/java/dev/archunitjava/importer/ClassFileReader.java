@@ -35,8 +35,9 @@ public final class ClassFileReader {
     public ClassFileReadResult readAll(List<ClassFileResource> resources) {
         Objects.requireNonNull(resources, "resources");
         List<ParsedClassFile> classes = new ArrayList<>();
-        List<ClassFileDiagnostic> diagnostics = new ArrayList<>();
-        for (ClassFileResource resource : resources) {
+        List<ClassFileDiagnostic> diagnostics =
+                new BoundedClassFileDiagnostics(options.maximumDiagnostics());
+        for (ClassFileResource resource : resources.stream().sorted().toList()) {
             read(Objects.requireNonNull(resource, "resource"), classes, diagnostics);
         }
         return new ClassFileReadResult(classes, diagnostics);

@@ -44,9 +44,11 @@ public final class ClassFileInputEnumerator {
     public InputEnumerationResult enumerate(List<ClassFileInput> inputs) {
         Objects.requireNonNull(inputs, "inputs");
         List<ClassFileResource> resources = new ArrayList<>();
-        List<InputDiagnostic> diagnostics = new ArrayList<>();
+        List<InputDiagnostic> diagnostics =
+                new BoundedInputDiagnostics(options.maximumDiagnostics());
         Set<String> identities = new HashSet<>();
-        for (int precedence = 0; precedence < inputs.size(); precedence++) {
+        int retainedInputs = Math.min(inputs.size(), options.maximumInputs());
+        for (int precedence = 0; precedence < retainedInputs; precedence++) {
             ClassFileInput input = Objects.requireNonNull(inputs.get(precedence), "input");
             if (!identities.add(input.identity())) {
                 diagnostics.add(diagnostic(
@@ -54,6 +56,9 @@ public final class ClassFileInputEnumerator {
                 continue;
             }
             enumerate(input, precedence, resources, diagnostics);
+        }
+        if (inputs.size() > options.maximumInputs()) {
+            diagnostics.add(limit("inputs", "inputs", options.maximumInputs()));
         }
         return new InputEnumerationResult(resources, diagnostics);
     }
@@ -164,11 +169,18 @@ public final class ClassFileInputEnumerator {
             diagnostics.add(diagnostic(InputDiagnosticCode.UNSUPPORTED_INPUT, jar.toString()));
             return;
         }
+        long archiveBytes = safeSize(jar);
+        if (archiveBytes < 0 || archiveBytes > options.maximumArchiveBytes()) {
+            diagnostics.add(limit(
+                    jar.toString(), "archive-bytes", options.maximumArchiveBytes()));
+            return;
+        }
         Set<String> names = new HashSet<>();
         try (ZipFile zip = new ZipFile(jar.toFile())) {
             List<ImportResourceRule> importRules = archiveRules(jar, zip, diagnostics);
             int entries = 0;
             int classes = 0;
+            long uncompressedBytes = 0;
             var enumeration = zip.entries();
             while (enumeration.hasMoreElements()) {
                 ZipEntry entry = enumeration.nextElement();
@@ -176,7 +188,37 @@ public final class ClassFileInputEnumerator {
                     diagnostics.add(limit(jar.toString(), "archive-entries", options.maximumArchiveEntries()));
                     break;
                 }
-                if (entry.isDirectory() || !entry.getName().endsWith(".class")) continue;
+                if (entry.isDirectory()) continue;
+                if (isNestedArchive(entry.getName())) {
+                    diagnostics.add(new InputDiagnostic(
+                            InputDiagnosticCode.NESTED_ARCHIVE_REJECTED,
+                            jar.toString(),
+                            Map.of(
+                                    "entry", entry.getName(),
+                                    "maximumDepth", Integer.toString(options.maximumArchiveNestingDepth()),
+                                    "reason", "nested-archives-are-not-traversed")));
+                    continue;
+                }
+                if (!entry.getName().endsWith(".class")) continue;
+                long size = entry.getSize();
+                long compressed = entry.getCompressedSize();
+                if (size < 0 || compressed < 0) {
+                    diagnostics.add(rejectedArchiveResource(jar, entry, "unknown-size"));
+                    continue;
+                }
+                if (compressionRatioExceeds(size, compressed)) {
+                    diagnostics.add(rejectedArchiveResource(jar, entry, "compression-ratio"));
+                    continue;
+                }
+                if (Long.MAX_VALUE - uncompressedBytes < size
+                        || uncompressedBytes + size > options.maximumArchiveUncompressedBytes()) {
+                    diagnostics.add(limit(
+                            jar.toString(),
+                            "archive-uncompressed-bytes",
+                            options.maximumArchiveUncompressedBytes()));
+                    break;
+                }
+                uncompressedBytes += size;
                 if (++classes > options.maximumResourcesPerInput()) {
                     diagnostics.add(limit(jar.toString(), "class-resources", options.maximumResourcesPerInput()));
                     break;
@@ -192,7 +234,6 @@ public final class ClassFileInputEnumerator {
                     diagnostics.add(diagnostic(InputDiagnosticCode.DUPLICATE_RESOURCE, jar.toString(), "entry", name));
                     continue;
                 }
-                long size = entry.getSize();
                 resources.add(new ClassFileResource(
                         name,
                         new ClassFileOrigin(ClassFileInput.Kind.JAR, jar.toString(), name),
@@ -403,14 +444,40 @@ public final class ClassFileInputEnumerator {
         return value.replace('\\', '/');
     }
 
-    private static boolean validResourceName(String name) {
-        if (name.isBlank() || name.startsWith("/") || name.indexOf('\0') >= 0 || name.contains("\\")) {
+    private boolean validResourceName(String name) {
+        if (name.length() > options.maximumResourceNameCharacters()
+                || name.isBlank() || name.startsWith("/") || name.indexOf('\0') >= 0 || name.contains("\\")) {
             return false;
         }
         for (String part : name.split("/", -1)) {
             if (part.isEmpty() || part.equals(".") || part.equals("..")) return false;
         }
         return true;
+    }
+
+    private boolean compressionRatioExceeds(long size, long compressedSize) {
+        if (size == 0) return false;
+        long denominator = Math.max(1, compressedSize);
+        return size / denominator > options.maximumCompressionRatio()
+                || size / denominator == options.maximumCompressionRatio()
+                        && size % denominator != 0;
+    }
+
+    private static boolean isNestedArchive(String name) {
+        String lower = name.toLowerCase(java.util.Locale.ROOT);
+        return lower.endsWith(".jar") || lower.endsWith(".zip");
+    }
+
+    private static InputDiagnostic rejectedArchiveResource(
+            Path jar, ZipEntry entry, String reason) {
+        return new InputDiagnostic(
+                InputDiagnosticCode.ARCHIVE_RESOURCE_REJECTED,
+                jar.toString(),
+                Map.of(
+                        "compressedBytes", Long.toString(entry.getCompressedSize()),
+                        "entry", entry.getName(),
+                        "reason", reason,
+                        "uncompressedBytes", Long.toString(entry.getSize())));
     }
 
     private static long safeSize(Path path) {
@@ -425,7 +492,7 @@ public final class ClassFileInputEnumerator {
         return input.path().map(Path::toString).orElseGet(() -> "jrt:/" + input.moduleName().orElseThrow());
     }
 
-    private static InputDiagnostic limit(String input, String kind, int maximum) {
+    private static InputDiagnostic limit(String input, String kind, long maximum) {
         return diagnostic(InputDiagnosticCode.RESOURCE_LIMIT_EXCEEDED, input, "limit", kind + ":" + maximum);
     }
 

@@ -58,7 +58,8 @@ public final class ClassPathImportResolver {
         Objects.requireNonNull(inputs, "inputs");
         Objects.requireNonNull(suppliedExternalTypes, "suppliedExternalTypes");
         ClassPathAssemblyResult assembly = new ClassPathAssembler(assemblyOptions).assemble(inputs);
-        List<ImportResolutionDiagnostic> diagnostics = new ArrayList<>();
+        List<ImportResolutionDiagnostic> diagnostics =
+                new BoundedImportResolutionDiagnostics(readerOptions.maximumDiagnostics());
         boolean damagedArchive = false;
         for (InputDiagnostic diagnostic : assembly.diagnostics()) {
             if (!damagedArchive(diagnostic)) continue;

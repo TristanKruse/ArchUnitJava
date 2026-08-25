@@ -2,6 +2,8 @@ package dev.archunitjava.importer;
 
 /** Machine-readable failures and exclusions produced while enumerating inputs. */
 public enum InputDiagnosticCode {
+    ARCHIVE_RESOURCE_REJECTED,
+    DIAGNOSTIC_LIMIT_REACHED,
     DUPLICATE_INPUT,
     DUPLICATE_RESOURCE,
     INVALID_IGNORE_RULE,
@@ -10,6 +12,7 @@ public enum InputDiagnosticCode {
     MANIFEST_CLASS_PATH_REJECTED,
     MISSING_INPUT,
     MULTI_RELEASE_ENTRY_IGNORED,
+    NESTED_ARCHIVE_REJECTED,
     RESOURCE_LIMIT_EXCEEDED,
     RESOURCE_EXCLUDED,
     SYMLINK_SKIPPED,

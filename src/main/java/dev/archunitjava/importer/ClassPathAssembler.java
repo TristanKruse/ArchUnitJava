@@ -36,7 +36,8 @@ public final class ClassPathAssembler {
 
     public ClassPathAssemblyResult assemble(List<ClassFileInput> inputs) {
         Objects.requireNonNull(inputs, "inputs");
-        List<InputDiagnostic> diagnostics = new ArrayList<>();
+        List<InputDiagnostic> diagnostics =
+                new BoundedInputDiagnostics(options.enumerationOptions().maximumDiagnostics());
         List<ClassFileInput> effectiveInputs = options.followManifestClassPath()
                 ? expandManifestClassPath(inputs, diagnostics)
                 : List.copyOf(inputs);

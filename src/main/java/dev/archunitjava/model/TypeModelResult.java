@@ -16,6 +16,10 @@ public record TypeModelResult(
         diagnostics = sorted(diagnostics, "diagnostic");
     }
 
+    public JavaPackageIndex packages() {
+        return JavaPackageIndex.of(types);
+    }
+
     private static <T extends Comparable<? super T>> List<T> sorted(List<T> values, String name) {
         Objects.requireNonNull(values, name + "s");
         TreeSet<T> sorted = new TreeSet<>();

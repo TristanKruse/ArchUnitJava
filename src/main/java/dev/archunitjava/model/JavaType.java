@@ -140,6 +140,10 @@ public final class JavaType implements Comparable<JavaType> {
         return owner;
     }
 
+    public JavaPackageName packageName() {
+        return new JavaPackageName(name.packageName());
+    }
+
     public JavaTypeKind kind() {
         return kind;
     }

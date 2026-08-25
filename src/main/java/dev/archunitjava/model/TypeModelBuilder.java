@@ -173,7 +173,8 @@ public final class TypeModelBuilder {
                     genericFieldView,
                     genericMethodView,
                     codeAccesses(signature, parsed, location),
-                    dynamicCallSites(signature, parsed, location)));
+                    dynamicCallSites(signature, parsed, location),
+                    exceptionEvidence(signature, parsed, location)));
         }
         return List.copyOf(members);
     }
@@ -211,6 +212,38 @@ public final class TypeModelBuilder {
         LineNumberTable lines = lineNumbers(parsed.lineNumbers());
         return parsed.dynamicCallSites().stream()
                 .map(site -> dynamicCallSite(caller, site, location, lines))
+                .sorted()
+                .toList();
+    }
+
+    private static List<JavaExceptionEvidence> exceptionEvidence(
+            JavaMemberSignature owner, ParsedMember parsed, DeclarationLocation location) {
+        LineNumberTable lines = lineNumbers(parsed.lineNumbers());
+        return parsed.exceptionEvidence().stream()
+                .map(value -> {
+                    Optional<JvmReferenceType> target = value.targetDescriptor()
+                            .map(JvmDescriptors::parseField)
+                            .map(type -> {
+                                if (!(type instanceof JvmReferenceType reference)) {
+                                    throw new IllegalArgumentException(
+                                            "Exception target must be a reference type");
+                                }
+                                return reference;
+                            });
+                    Optional<BytecodeLocation> bytecode = value.bytecodeOffset().isPresent()
+                            ? Optional.of(new BytecodeLocation(
+                                    location.resource(),
+                                    location.sourceFile(),
+                                    value.bytecodeOffset().getAsInt(),
+                                    lines.lineAt(value.bytecodeOffset().getAsInt())))
+                            : Optional.empty();
+                    return new JavaExceptionEvidence(
+                            owner,
+                            JavaExceptionEvidenceKind.valueOf(value.kind().name()),
+                            target,
+                            location,
+                            bytecode);
+                })
                 .sorted()
                 .toList();
     }

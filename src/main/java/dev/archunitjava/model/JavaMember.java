@@ -24,6 +24,7 @@ public final class JavaMember implements Comparable<JavaMember> {
     private final Optional<GenericMethodView> genericMethodView;
     private final List<JavaCodeAccess> codeAccesses;
     private final List<JavaDynamicCallSite> dynamicCallSites;
+    private final List<JavaExceptionEvidence> exceptionEvidence;
 
     JavaMember(
             JavaMemberSignature signature,
@@ -39,7 +40,8 @@ public final class JavaMember implements Comparable<JavaMember> {
             Optional<GenericFieldView> genericFieldView,
             Optional<GenericMethodView> genericMethodView,
             List<JavaCodeAccess> codeAccesses,
-            List<JavaDynamicCallSite> dynamicCallSites) {
+            List<JavaDynamicCallSite> dynamicCallSites,
+            List<JavaExceptionEvidence> exceptionEvidence) {
         this.signature = Objects.requireNonNull(signature, "signature");
         this.kind = Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(modifiers, "modifiers");
@@ -91,6 +93,17 @@ public final class JavaMember implements Comparable<JavaMember> {
         }
         if (this.dynamicCallSites.stream().anyMatch(site -> !site.caller().equals(signature))) {
             throw new IllegalArgumentException("Dynamic call-site caller must match its member");
+        }
+        Objects.requireNonNull(exceptionEvidence, "exceptionEvidence");
+        this.exceptionEvidence = exceptionEvidence.stream()
+                .map(value -> Objects.requireNonNull(value, "exceptionEvidence"))
+                .sorted()
+                .toList();
+        if (kind == JavaMemberKind.FIELD && !this.exceptionEvidence.isEmpty()) {
+            throw new IllegalArgumentException("Fields cannot have exception evidence");
+        }
+        if (this.exceptionEvidence.stream().anyMatch(value -> !value.owner().equals(signature))) {
+            throw new IllegalArgumentException("Exception evidence owner must match its member");
         }
     }
 
@@ -193,6 +206,10 @@ public final class JavaMember implements Comparable<JavaMember> {
 
     public List<JavaDynamicCallSite> dynamicCallSites() {
         return dynamicCallSites;
+    }
+
+    public List<JavaExceptionEvidence> exceptionEvidence() {
+        return exceptionEvidence;
     }
 
     @Override

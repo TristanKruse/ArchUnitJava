@@ -16,6 +16,7 @@ import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.instruction.FieldInstruction;
 import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.instruction.ThrowInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
@@ -58,6 +59,7 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                     List.of(),
                     signature(field),
                     List.of(),
+                    List.of(),
                     List.of()));
             addDeclarationAnnotations(
                     field, ParsedAnnotationOccurrence.Container.FIELD, name, descriptor, annotations);
@@ -88,7 +90,8 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
                     lines,
                     signature(method),
                     code.map(JdkClassFileParserBackend::codeAccesses).orElse(List.of()),
-                    code.map(JdkClassFileParserBackend::dynamicCallSites).orElse(List.of())));
+                    code.map(JdkClassFileParserBackend::dynamicCallSites).orElse(List.of()),
+                    exceptionEvidence(method, code)));
             addDeclarationAnnotations(
                     method, ParsedAnnotationOccurrence.Container.METHOD, name, descriptor, annotations);
             addParameterAnnotations(method, name, descriptor, annotations);
@@ -238,6 +241,42 @@ final class JdkClassFileParserBackend implements ClassFileParserBackend {
             }
             bytecodeOffset += instruction.sizeInBytes();
         }
+        return result.stream().sorted().toList();
+    }
+
+    private static List<ParsedExceptionEvidence> exceptionEvidence(
+            java.lang.classfile.MethodModel method,
+            Optional<java.lang.classfile.CodeModel> code) {
+        List<ParsedExceptionEvidence> result = new ArrayList<>();
+        method.findAttributes(Attributes.exceptions()).stream()
+                .flatMap(attribute -> attribute.exceptions().stream())
+                .map(value -> new ParsedExceptionEvidence(
+                        ParsedExceptionEvidence.Kind.DECLARED_THROWS,
+                        Optional.of(ownerDescriptor(value.asInternalName())),
+                        OptionalInt.empty()))
+                .forEach(result::add);
+        code.ifPresent(value -> {
+            CodeAttribute attribute = requireCodeAttribute(value);
+            value.exceptionHandlers().stream()
+                    .map(handler -> new ParsedExceptionEvidence(
+                            handler.catchType().isPresent()
+                                    ? ParsedExceptionEvidence.Kind.CAUGHT_HANDLER
+                                    : ParsedExceptionEvidence.Kind.CATCH_ALL_HANDLER,
+                            handler.catchType().map(type -> ownerDescriptor(type.asInternalName())),
+                            OptionalInt.of(attribute.labelToBci(handler.handler()))))
+                    .forEach(result::add);
+            int bytecodeOffset = 0;
+            for (Object element : value) {
+                if (!(element instanceof Instruction instruction)) continue;
+                if (instruction instanceof ThrowInstruction) {
+                    result.add(new ParsedExceptionEvidence(
+                            ParsedExceptionEvidence.Kind.THROW_INSTRUCTION,
+                            Optional.empty(),
+                            OptionalInt.of(bytecodeOffset)));
+                }
+                bytecodeOffset += instruction.sizeInBytes();
+            }
+        });
         return result.stream().sorted().toList();
     }
 

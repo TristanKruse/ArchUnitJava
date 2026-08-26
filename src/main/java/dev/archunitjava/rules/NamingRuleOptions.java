@@ -8,7 +8,7 @@ import java.util.TreeSet;
 public record NamingRuleOptions(
         boolean includeAnonymousTypes,
         boolean includeLocalTypes,
-        boolean includeGeneratedTypes,
+        boolean includeGeneratedSubjects,
         Set<String> generatedAnnotationBinaryNames) {
     public NamingRuleOptions {
         Objects.requireNonNull(generatedAnnotationBinaryNames, "generatedAnnotationBinaryNames");
@@ -28,21 +28,32 @@ public record NamingRuleOptions(
 
     public NamingRuleOptions includingAnonymousTypes() {
         return new NamingRuleOptions(
-                true, includeLocalTypes, includeGeneratedTypes, generatedAnnotationBinaryNames);
+                true, includeLocalTypes, includeGeneratedSubjects, generatedAnnotationBinaryNames);
     }
 
     public NamingRuleOptions includingLocalTypes() {
         return new NamingRuleOptions(
-                includeAnonymousTypes, true, includeGeneratedTypes, generatedAnnotationBinaryNames);
+                includeAnonymousTypes, true, includeGeneratedSubjects, generatedAnnotationBinaryNames);
     }
 
-    public NamingRuleOptions includingGeneratedTypes() {
+    /** Includes generated types as well as synthetic or bridge members. */
+    public NamingRuleOptions includingGeneratedSubjects() {
         return new NamingRuleOptions(
                 includeAnonymousTypes, includeLocalTypes, true, generatedAnnotationBinaryNames);
     }
 
+    /** Compatibility alias for the original type-oriented option name. */
+    public NamingRuleOptions includingGeneratedTypes() {
+        return includingGeneratedSubjects();
+    }
+
+    /** Compatibility accessor for the original type-oriented option name. */
+    public boolean includeGeneratedTypes() {
+        return includeGeneratedSubjects;
+    }
+
     public NamingRuleOptions withGeneratedAnnotationBinaryNames(Set<String> names) {
         return new NamingRuleOptions(
-                includeAnonymousTypes, includeLocalTypes, includeGeneratedTypes, names);
+                includeAnonymousTypes, includeLocalTypes, includeGeneratedSubjects, names);
     }
 }

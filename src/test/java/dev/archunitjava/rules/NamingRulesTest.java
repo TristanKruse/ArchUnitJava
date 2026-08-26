@@ -44,7 +44,11 @@ class NamingRulesTest {
                 ClassDesc.of("api.GoodName"), builder -> builder
                         .with(SourceFileAttribute.of("GoodName.java"))
                         .withMethod("run_bad", VOID_METHOD,
-                                ClassFile.ACC_PUBLIC | ClassFile.ACC_ABSTRACT, ignored -> {})));
+                                ClassFile.ACC_PUBLIC | ClassFile.ACC_ABSTRACT, ignored -> {})
+                        .withMethod("generated_bad", VOID_METHOD,
+                                ClassFile.ACC_PUBLIC | ClassFile.ACC_ABSTRACT
+                                        | ClassFile.ACC_SYNTHETIC | ClassFile.ACC_BRIDGE,
+                                ignored -> {})));
         write("api/Bad_name.class", ClassFile.of().build(
                 ClassDesc.of("api.Bad_name"), builder -> builder
                         .with(SourceFileAttribute.of("Bad_name.java"))));
@@ -161,6 +165,34 @@ class NamingRulesTest {
                 NamingTarget.SIMPLE_NAME,
                 exactName("AdapterGenerated"), PatternRuleMode.MUST_NOT_MATCH,
                 NamingRuleOptions.defaults().includingGeneratedTypes()).check().status());
+    }
+
+    @Test
+    void generatedMembersRequireOptInAndAnnotationConfigurationChangesIdentity() {
+        ArchitectureRule generatedMember = NamingRules.members(
+                model, MemberSelector.named("generated_bad"),
+                NamingTarget.SIMPLE_NAME,
+                exactName("generated_bad"), PatternRuleMode.MUST_NOT_MATCH);
+
+        assertEquals(RuleStatus.INCOMPLETE, generatedMember.check().status());
+        assertEquals(RuleStatus.FAILED, NamingRules.members(
+                model, MemberSelector.named("generated_bad"),
+                NamingTarget.SIMPLE_NAME,
+                exactName("generated_bad"), PatternRuleMode.MUST_NOT_MATCH,
+                NamingRuleOptions.defaults().includingGeneratedSubjects()).check().status());
+
+        String firstIdentity = NamingRules.types(
+                model, TypeSelector.all(), NamingTarget.SIMPLE_NAME,
+                exactName("GoodName"), PatternRuleMode.MUST_MATCH,
+                NamingRuleOptions.defaults().withGeneratedAnnotationBinaryNames(
+                        java.util.Set.of("example.FirstGenerated"))).metadata().semanticIdentity();
+        String secondIdentity = NamingRules.types(
+                model, TypeSelector.all(), NamingTarget.SIMPLE_NAME,
+                exactName("GoodName"), PatternRuleMode.MUST_MATCH,
+                NamingRuleOptions.defaults().withGeneratedAnnotationBinaryNames(
+                        java.util.Set.of("example.SecondGenerated"))).metadata().semanticIdentity();
+
+        assertTrue(!firstIdentity.equals(secondIdentity));
     }
 
     private byte[] nested(String binaryName, InnerClassInfo info) {

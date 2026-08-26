@@ -189,7 +189,7 @@ public final class DependencyRules {
             Map<StableId, List<DependencyEdge>> outgoing) {
         boolean any = outgoing.values().stream().flatMap(Collection::stream)
                 .anyMatch(edge -> domain.targets.contains(edge.target()));
-        if (any) return List.of();
+        if (any || domain.origins.isEmpty()) return List.of();
         StableId representative = domain.origins.getFirst();
         return List.of(missingViolation(
                 metadata, domain, representative, "dependency.any-required"));

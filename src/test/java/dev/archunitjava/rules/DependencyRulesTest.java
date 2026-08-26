@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.archunitjava.execution.CheckOptions;
+import dev.archunitjava.execution.EmptySelectionPolicy;
 import dev.archunitjava.graph.DependencyEvidence;
 import dev.archunitjava.graph.DependencyGraph;
 import dev.archunitjava.graph.DependencyKind;
@@ -158,6 +159,26 @@ class DependencyRulesTest {
                 emptyRule.check().diagnostics().getFirst().code());
         assertEquals(RuleStatus.INCOMPLETE, emptyTargetRule.check().status());
         assertEquals("targets", emptyTargetRule.check().diagnostics().getFirst().context().get("role"));
+    }
+
+    @Test
+    void deliberatelyNonFailingEmptyOriginsNeverCrashAnyDependencyRules() {
+        var rule = DependencyRules.types(
+                model, graph,
+                binary("missing.Type"),
+                binary("api.B"),
+                DependencyRuleSpec.anyDependency()
+                        .withExternalDependencies(ExternalDependencyPolicy.IGNORE));
+
+        var warned = rule.check(CheckOptions.builder()
+                .emptySelectionPolicy(EmptySelectionPolicy.WARN).build());
+        var allowed = rule.check(CheckOptions.builder()
+                .emptySelectionPolicy(EmptySelectionPolicy.ALLOW).build());
+
+        assertEquals(RuleStatus.PASSED, warned.status());
+        assertEquals(RuleTerminal.EMPTY_SELECTION_CODE, warned.diagnostics().getFirst().code());
+        assertEquals(RuleStatus.PASSED, allowed.status());
+        assertTrue(allowed.diagnostics().isEmpty());
     }
 
     private static TypeSelector binary(String value) {

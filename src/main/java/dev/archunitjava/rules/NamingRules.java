@@ -8,6 +8,7 @@ import dev.archunitjava.graph.TypeId;
 import dev.archunitjava.model.GeneratedCodeClassifier;
 import dev.archunitjava.model.GeneratedCodeOptions;
 import dev.archunitjava.model.JavaMember;
+import dev.archunitjava.model.JavaMemberModifier;
 import dev.archunitjava.model.JavaNestingKind;
 import dev.archunitjava.model.JavaPackage;
 import dev.archunitjava.model.JavaType;
@@ -94,7 +95,9 @@ public final class NamingRules {
         List<Candidate> candidates = selection.selected().stream()
                 .filter(member -> {
                     JavaType owner = types.get(member.owner().binaryName());
-                    return owner != null && included(owner, inclusion);
+                    return owner != null
+                            && included(owner, inclusion)
+                            && (inclusion.includeGeneratedSubjects() || !generated(member));
                 })
                 .map(member -> memberCandidate(member, types.get(member.owner().binaryName()), spec.target))
                 .toList();
@@ -289,7 +292,12 @@ public final class NamingRules {
                 type,
                 GeneratedCodeOptions.enabled(options.generatedAnnotationBinaryNames()))
                 .generated();
-        return options.includeGeneratedTypes() || !generated;
+        return options.includeGeneratedSubjects() || !generated;
+    }
+
+    private static boolean generated(JavaMember member) {
+        return member.modifiers().contains(JavaMemberModifier.SYNTHETIC)
+                || member.modifiers().contains(JavaMemberModifier.BRIDGE);
     }
 
     private static java.util.Optional<String> simpleName(JavaType type) {
@@ -305,7 +313,9 @@ public final class NamingRules {
         return new SelectorDescription(selector.text()
                 + " [anonymous=" + options.includeAnonymousTypes()
                 + ", local=" + options.includeLocalTypes()
-                + ", generated=" + options.includeGeneratedTypes() + "]");
+                + ", generated=" + options.includeGeneratedSubjects()
+                + ", generatedAnnotations="
+                + String.join(",", options.generatedAnnotationBinaryNames()) + "]");
     }
 
     private static Map<String, JavaType> indexedTypes(Collection<JavaType> types) {

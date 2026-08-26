@@ -3,6 +3,8 @@ package dev.archunitjava.selector;
 import dev.archunitjava.model.JavaNestingKind;
 import dev.archunitjava.model.JavaType;
 import dev.archunitjava.model.JavaTypeName;
+import dev.archunitjava.model.MetaAnnotationResolver;
+import dev.archunitjava.model.TypeHierarchy;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,6 +16,8 @@ import java.util.TreeSet;
 
 final class TypeSelectionContext {
     private final Map<JavaTypeName, JavaType> types;
+    private final TypeHierarchy hierarchy;
+    private final MetaAnnotationResolver metaAnnotations;
     private final Map<JavaTypeName, Optional<String>> canonicalNames = new HashMap<>();
     private final Set<SelectionDiagnostic> diagnostics = new TreeSet<>();
 
@@ -24,6 +28,8 @@ final class TypeSelectionContext {
             if (current == null || type.compareTo(current) < 0) indexed.put(type.name(), type);
         }
         types = Map.copyOf(indexed);
+        hierarchy = TypeHierarchy.of(indexed.values());
+        metaAnnotations = new MetaAnnotationResolver(indexed.values());
     }
 
     Optional<String> canonicalName(JavaType type) {
@@ -40,6 +46,32 @@ final class TypeSelectionContext {
 
     Set<SelectionDiagnostic> diagnostics() {
         return Set.copyOf(diagnostics);
+    }
+
+    Optional<JavaType> type(JavaTypeName name) {
+        return Optional.ofNullable(types.get(name));
+    }
+
+    TypeHierarchy hierarchy() {
+        return hierarchy;
+    }
+
+    MetaAnnotationResolver metaAnnotations() {
+        return metaAnnotations;
+    }
+
+    boolean unknown(
+            SelectionDiagnosticCode code,
+            String subject,
+            String detail,
+            UnknownHierarchyPolicy policy) {
+        SelectionDiagnostic diagnostic = new SelectionDiagnostic(code, subject, detail);
+        diagnostics.add(diagnostic);
+        return switch (policy) {
+            case INCLUDE -> true;
+            case EXCLUDE -> false;
+            case FAIL -> throw new IncompleteSelectionException(diagnostic);
+        };
     }
 
     private Optional<String> canonicalName(JavaType type, Set<JavaTypeName> visiting) {

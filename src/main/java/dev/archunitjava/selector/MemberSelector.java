@@ -2,6 +2,7 @@ package dev.archunitjava.selector;
 
 import dev.archunitjava.model.JavaMember;
 import dev.archunitjava.model.JavaMemberKind;
+import dev.archunitjava.model.JavaMemberModifier;
 import dev.archunitjava.model.JavaMemberSignature;
 import dev.archunitjava.model.JavaType;
 import dev.archunitjava.model.JvmDescriptors;
@@ -50,6 +51,40 @@ public final class MemberSelector {
         return new MemberSelector(
                 new SelectorDescription("code units"),
                 (member, context) -> member.isCodeUnit());
+    }
+
+    public static MemberSelector visibility(MemberVisibility visibility) {
+        MemberVisibility value = Objects.requireNonNull(visibility, "visibility");
+        return new MemberSelector(
+                new SelectorDescription("members with " + value.name() + " visibility"),
+                (member, context) -> switch (value) {
+                    case PUBLIC -> member.modifiers().contains(JavaMemberModifier.PUBLIC);
+                    case PROTECTED -> member.modifiers().contains(JavaMemberModifier.PROTECTED);
+                    case PRIVATE -> member.modifiers().contains(JavaMemberModifier.PRIVATE);
+                    case PACKAGE_PRIVATE -> member.modifiers().stream().noneMatch(modifier ->
+                            modifier == JavaMemberModifier.PUBLIC
+                                    || modifier == JavaMemberModifier.PROTECTED
+                                    || modifier == JavaMemberModifier.PRIVATE);
+                });
+    }
+
+    public static MemberSelector modifier(JavaMemberModifier modifier) {
+        JavaMemberModifier value = Objects.requireNonNull(modifier, "modifier");
+        return new MemberSelector(
+                new SelectorDescription("members with modifier " + value.name()),
+                (member, context) -> member.modifiers().contains(value));
+    }
+
+    public static MemberSelector annotatedWith(AnnotationQuery query) {
+        AnnotationQuery value = Objects.requireNonNull(query, "query");
+        if (value.mode() == AnnotationMatchMode.INHERITED_DECLARATION) {
+            throw new IllegalArgumentException("Member annotations cannot use inherited mode");
+        }
+        return new MemberSelector(
+                new SelectorDescription("members " + value.mode() + " annotated with "
+                        + value.annotationType().binaryName()),
+                (member, context) -> SemanticMatchers.memberAnnotation(
+                        member, value, context.typeContext()));
     }
 
     public static MemberSelector named(String name) {

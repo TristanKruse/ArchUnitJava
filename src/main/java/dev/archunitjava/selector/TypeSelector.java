@@ -3,6 +3,9 @@ package dev.archunitjava.selector;
 import dev.archunitjava.importer.ClassFileInput;
 import dev.archunitjava.model.JavaType;
 import dev.archunitjava.model.JavaTypeKind;
+import dev.archunitjava.model.JavaModifier;
+import dev.archunitjava.model.JavaNestingKind;
+import dev.archunitjava.model.JavaTypeName;
 import dev.archunitjava.model.TypeModelResult;
 import dev.archunitjava.pattern.JavaPattern;
 import dev.archunitjava.pattern.PatternDomain;
@@ -59,6 +62,68 @@ public final class TypeSelector {
         return new TypeSelector(
                 new SelectorDescription("types of kind " + value.name()),
                 (type, context) -> type.kind() == value);
+    }
+
+    public static TypeSelector visibility(TypeVisibility visibility) {
+        TypeVisibility value = Objects.requireNonNull(visibility, "visibility");
+        return new TypeSelector(
+                new SelectorDescription("types with " + value.name() + " visibility"),
+                (type, context) -> (value == TypeVisibility.PUBLIC)
+                        == type.modifiers().contains(JavaModifier.PUBLIC));
+    }
+
+    public static TypeSelector modifier(JavaModifier modifier) {
+        JavaModifier value = Objects.requireNonNull(modifier, "modifier");
+        return new TypeSelector(
+                new SelectorDescription("types with modifier " + value.name()),
+                (type, context) -> type.modifiers().contains(value));
+    }
+
+    public static TypeSelector records() {
+        return kind(JavaTypeKind.RECORD);
+    }
+
+    public static TypeSelector sealedTypes() {
+        return new TypeSelector(
+                new SelectorDescription("sealed types"),
+                (type, context) -> type.isSealed());
+    }
+
+    public static TypeSelector nesting(JavaNestingKind nesting) {
+        JavaNestingKind value = Objects.requireNonNull(nesting, "nesting");
+        return new TypeSelector(
+                new SelectorDescription("types with nesting kind " + value.name()),
+                (type, context) -> type.nesting().kind() == value);
+    }
+
+    public static TypeSelector annotatedWith(AnnotationQuery query) {
+        AnnotationQuery value = Objects.requireNonNull(query, "query");
+        return new TypeSelector(
+                new SelectorDescription("types " + value.mode() + " annotated with "
+                        + value.annotationType().binaryName()),
+                (type, context) -> SemanticMatchers.typeAnnotation(type, value, context));
+    }
+
+    public static TypeSelector assignableTo(
+            String targetBinaryName, UnknownHierarchyPolicy unknownPolicy) {
+        JavaTypeName target = new JavaTypeName(targetBinaryName);
+        UnknownHierarchyPolicy policy = Objects.requireNonNull(unknownPolicy, "unknownPolicy");
+        return new TypeSelector(
+                new SelectorDescription("types assignable to " + target.binaryName()
+                        + " (unknown: " + policy + ")"),
+                (type, context) -> SemanticMatchers.assignability(
+                        type, target, true, policy, context));
+    }
+
+    public static TypeSelector assignableFrom(
+            String sourceBinaryName, UnknownHierarchyPolicy unknownPolicy) {
+        JavaTypeName source = new JavaTypeName(sourceBinaryName);
+        UnknownHierarchyPolicy policy = Objects.requireNonNull(unknownPolicy, "unknownPolicy");
+        return new TypeSelector(
+                new SelectorDescription("types assignable from " + source.binaryName()
+                        + " (unknown: " + policy + ")"),
+                (type, context) -> SemanticMatchers.assignability(
+                        type, source, false, policy, context));
     }
 
     public static TypeSelector inputKind(ClassFileInput.Kind kind) {

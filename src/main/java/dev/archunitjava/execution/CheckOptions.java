@@ -6,11 +6,11 @@ import java.util.Objects;
 public final class CheckOptions {
     private static final CheckOptions DEFAULTS = new Builder().build();
 
-    private final boolean allowEmptySelection;
+    private final EmptySelectionPolicy emptySelectionPolicy;
     private final boolean allowIncompleteAnalysis;
 
     private CheckOptions(Builder builder) {
-        allowEmptySelection = builder.allowEmptySelection;
+        emptySelectionPolicy = builder.emptySelectionPolicy;
         allowIncompleteAnalysis = builder.allowIncompleteAnalysis;
     }
 
@@ -29,7 +29,11 @@ public final class CheckOptions {
     }
 
     public boolean allowEmptySelection() {
-        return allowEmptySelection;
+        return emptySelectionPolicy == EmptySelectionPolicy.ALLOW;
+    }
+
+    public EmptySelectionPolicy emptySelectionPolicy() {
+        return emptySelectionPolicy;
     }
 
     public boolean allowIncompleteAnalysis() {
@@ -39,35 +43,40 @@ public final class CheckOptions {
     @Override
     public boolean equals(Object other) {
         return other instanceof CheckOptions options
-                && allowEmptySelection == options.allowEmptySelection
+                && emptySelectionPolicy == options.emptySelectionPolicy
                 && allowIncompleteAnalysis == options.allowIncompleteAnalysis;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(allowEmptySelection, allowIncompleteAnalysis);
+        return Objects.hash(emptySelectionPolicy, allowIncompleteAnalysis);
     }
 
     @Override
     public String toString() {
-        return "CheckOptions[allowEmptySelection=" + allowEmptySelection
+        return "CheckOptions[emptySelectionPolicy=" + emptySelectionPolicy
                 + ", allowIncompleteAnalysis=" + allowIncompleteAnalysis + ']';
     }
 
     /** Mutable construction state; built options never retain a reference to it. */
     public static final class Builder {
-        private boolean allowEmptySelection;
+        private EmptySelectionPolicy emptySelectionPolicy = EmptySelectionPolicy.FAIL;
         private boolean allowIncompleteAnalysis;
 
         private Builder() {}
 
         private Builder(CheckOptions options) {
-            allowEmptySelection = options.allowEmptySelection;
+            emptySelectionPolicy = options.emptySelectionPolicy;
             allowIncompleteAnalysis = options.allowIncompleteAnalysis;
         }
 
         public Builder allowEmptySelection(boolean value) {
-            allowEmptySelection = value;
+            emptySelectionPolicy = value ? EmptySelectionPolicy.ALLOW : EmptySelectionPolicy.FAIL;
+            return this;
+        }
+
+        public Builder emptySelectionPolicy(EmptySelectionPolicy value) {
+            emptySelectionPolicy = Objects.requireNonNull(value, "emptySelectionPolicy");
             return this;
         }
 

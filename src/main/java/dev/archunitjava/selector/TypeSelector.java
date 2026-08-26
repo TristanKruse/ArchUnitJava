@@ -17,14 +17,69 @@ import java.util.Objects;
 public final class TypeSelector {
     private final SelectorDescription description;
     private final Matcher matcher;
+    private final SelectorConstant constant;
 
     private TypeSelector(SelectorDescription description, Matcher matcher) {
+        this(description, matcher, SelectorConstant.CONDITIONAL);
+    }
+
+    private TypeSelector(
+            SelectorDescription description, Matcher matcher, SelectorConstant constant) {
         this.description = Objects.requireNonNull(description, "description");
         this.matcher = Objects.requireNonNull(matcher, "matcher");
+        this.constant = Objects.requireNonNull(constant, "constant");
     }
 
     public static TypeSelector all() {
-        return new TypeSelector(new SelectorDescription("all types"), (type, context) -> true);
+        return new TypeSelector(
+                new SelectorDescription("all types"),
+                (type, context) -> true,
+                SelectorConstant.UNIVERSAL);
+    }
+
+    public static TypeSelector none() {
+        return new TypeSelector(
+                new SelectorDescription("no types"),
+                (type, context) -> false,
+                SelectorConstant.EMPTY);
+    }
+
+    public static TypeSelector allOf(TypeSelector... selectors) {
+        return allOf(List.of(Objects.requireNonNull(selectors, "selectors").clone()));
+    }
+
+    public static TypeSelector allOf(Collection<TypeSelector> selectors) {
+        List<TypeSelector> values = stable(selectors, "AND");
+        SelectorConstant constant = values.stream().anyMatch(value -> value.constant == SelectorConstant.EMPTY)
+                ? SelectorConstant.EMPTY
+                : values.stream().allMatch(value -> value.constant == SelectorConstant.UNIVERSAL)
+                        ? SelectorConstant.UNIVERSAL : SelectorConstant.CONDITIONAL;
+        Matcher matcher = constant == SelectorConstant.CONDITIONAL
+                ? (type, context) -> values.stream().allMatch(value -> value.matcher.matches(type, context))
+                : (type, context) -> constant == SelectorConstant.UNIVERSAL;
+        return new TypeSelector(
+                SelectorDescriptions.group("AND", descriptions(values)),
+                matcher,
+                constant);
+    }
+
+    public static TypeSelector anyOf(TypeSelector... selectors) {
+        return anyOf(List.of(Objects.requireNonNull(selectors, "selectors").clone()));
+    }
+
+    public static TypeSelector anyOf(Collection<TypeSelector> selectors) {
+        List<TypeSelector> values = stable(selectors, "OR");
+        SelectorConstant constant = values.stream().anyMatch(value -> value.constant == SelectorConstant.UNIVERSAL)
+                ? SelectorConstant.UNIVERSAL
+                : values.stream().allMatch(value -> value.constant == SelectorConstant.EMPTY)
+                        ? SelectorConstant.EMPTY : SelectorConstant.CONDITIONAL;
+        Matcher matcher = constant == SelectorConstant.CONDITIONAL
+                ? (type, context) -> values.stream().anyMatch(value -> value.matcher.matches(type, context))
+                : (type, context) -> constant == SelectorConstant.UNIVERSAL;
+        return new TypeSelector(
+                SelectorDescriptions.group("OR", descriptions(values)),
+                matcher,
+                constant);
     }
 
     public static TypeSelector binaryName(JavaPattern pattern) {
@@ -144,6 +199,46 @@ public final class TypeSelector {
         return description;
     }
 
+    public SelectorConstant constant() {
+        return constant;
+    }
+
+    public TypeSelector and(TypeSelector other) {
+        return allOf(this, Objects.requireNonNull(other, "other"));
+    }
+
+    public TypeSelector or(TypeSelector other) {
+        return anyOf(this, Objects.requireNonNull(other, "other"));
+    }
+
+    public TypeSelector not() {
+        SelectorConstant negated = switch (constant) {
+            case UNIVERSAL -> SelectorConstant.EMPTY;
+            case EMPTY -> SelectorConstant.UNIVERSAL;
+            case CONDITIONAL -> SelectorConstant.CONDITIONAL;
+        };
+        return new TypeSelector(
+                SelectorDescriptions.not(description),
+                (type, context) -> !matcher.matches(type, context),
+                negated);
+    }
+
+    public TypeSelector excluding(TypeSelector exclusion) {
+        TypeSelector value = Objects.requireNonNull(exclusion, "exclusion");
+        SelectorConstant result = constant == SelectorConstant.EMPTY
+                        || value.constant == SelectorConstant.UNIVERSAL
+                ? SelectorConstant.EMPTY
+                : value.constant == SelectorConstant.EMPTY ? constant : SelectorConstant.CONDITIONAL;
+        Matcher combined = result == SelectorConstant.CONDITIONAL
+                ? (type, context) -> matcher.matches(type, context)
+                        && !value.matcher.matches(type, context)
+                : (type, context) -> result == SelectorConstant.UNIVERSAL;
+        return new TypeSelector(
+                SelectorDescriptions.excluding(description, value.description),
+                combined,
+                result);
+    }
+
     public boolean matches(JavaType type, Collection<JavaType> universe) {
         Objects.requireNonNull(type, "type");
         TypeSelectionContext context = new TypeSelectionContext(
@@ -192,6 +287,23 @@ public final class TypeSelector {
             String attribute, JavaPattern pattern, Matcher matcher) {
         return new TypeSelector(
                 new SelectorDescription(attribute + " matches " + pattern.description()), matcher);
+    }
+
+    private static List<TypeSelector> stable(
+            Collection<TypeSelector> selectors, String operator) {
+        Objects.requireNonNull(selectors, "selectors");
+        List<TypeSelector> values = selectors.stream()
+                .map(value -> Objects.requireNonNull(value, "selector"))
+                .sorted(java.util.Comparator.comparing(value -> value.description.text()))
+                .toList();
+        if (values.isEmpty()) {
+            throw new IllegalArgumentException(operator + " group must contain at least one selector");
+        }
+        return values;
+    }
+
+    private static List<SelectorDescription> descriptions(List<TypeSelector> selectors) {
+        return selectors.stream().map(TypeSelector::description).toList();
     }
 
     private static JavaPattern qualified(JavaPattern pattern, String role) {

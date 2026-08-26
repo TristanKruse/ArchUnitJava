@@ -20,15 +20,69 @@ import java.util.Objects;
 public final class MemberSelector {
     private final SelectorDescription description;
     private final Matcher matcher;
+    private final SelectorConstant constant;
 
     private MemberSelector(SelectorDescription description, Matcher matcher) {
+        this(description, matcher, SelectorConstant.CONDITIONAL);
+    }
+
+    private MemberSelector(
+            SelectorDescription description, Matcher matcher, SelectorConstant constant) {
         this.description = Objects.requireNonNull(description, "description");
         this.matcher = Objects.requireNonNull(matcher, "matcher");
+        this.constant = Objects.requireNonNull(constant, "constant");
     }
 
     public static MemberSelector all() {
         return new MemberSelector(
-                new SelectorDescription("all declared members"), (member, context) -> true);
+                new SelectorDescription("all declared members"), (member, context) -> true,
+                SelectorConstant.UNIVERSAL);
+    }
+
+    public static MemberSelector none() {
+        return new MemberSelector(
+                new SelectorDescription("no declared members"), (member, context) -> false,
+                SelectorConstant.EMPTY);
+    }
+
+    public static MemberSelector allOf(MemberSelector... selectors) {
+        return allOf(List.of(Objects.requireNonNull(selectors, "selectors").clone()));
+    }
+
+    public static MemberSelector allOf(Collection<MemberSelector> selectors) {
+        List<MemberSelector> values = stable(selectors, "AND");
+        SelectorConstant constant = values.stream().anyMatch(value -> value.constant == SelectorConstant.EMPTY)
+                ? SelectorConstant.EMPTY
+                : values.stream().allMatch(value -> value.constant == SelectorConstant.UNIVERSAL)
+                        ? SelectorConstant.UNIVERSAL : SelectorConstant.CONDITIONAL;
+        Matcher matcher = constant == SelectorConstant.CONDITIONAL
+                ? (member, context) -> values.stream().allMatch(value ->
+                        value.matcher.matches(member, context))
+                : (member, context) -> constant == SelectorConstant.UNIVERSAL;
+        return new MemberSelector(
+                SelectorDescriptions.group("AND", descriptions(values)),
+                matcher,
+                constant);
+    }
+
+    public static MemberSelector anyOf(MemberSelector... selectors) {
+        return anyOf(List.of(Objects.requireNonNull(selectors, "selectors").clone()));
+    }
+
+    public static MemberSelector anyOf(Collection<MemberSelector> selectors) {
+        List<MemberSelector> values = stable(selectors, "OR");
+        SelectorConstant constant = values.stream().anyMatch(value -> value.constant == SelectorConstant.UNIVERSAL)
+                ? SelectorConstant.UNIVERSAL
+                : values.stream().allMatch(value -> value.constant == SelectorConstant.EMPTY)
+                        ? SelectorConstant.EMPTY : SelectorConstant.CONDITIONAL;
+        Matcher matcher = constant == SelectorConstant.CONDITIONAL
+                ? (member, context) -> values.stream().anyMatch(value ->
+                        value.matcher.matches(member, context))
+                : (member, context) -> constant == SelectorConstant.UNIVERSAL;
+        return new MemberSelector(
+                SelectorDescriptions.group("OR", descriptions(values)),
+                matcher,
+                constant);
     }
 
     public static MemberSelector fields() {
@@ -179,6 +233,46 @@ public final class MemberSelector {
         return description;
     }
 
+    public SelectorConstant constant() {
+        return constant;
+    }
+
+    public MemberSelector and(MemberSelector other) {
+        return allOf(this, Objects.requireNonNull(other, "other"));
+    }
+
+    public MemberSelector or(MemberSelector other) {
+        return anyOf(this, Objects.requireNonNull(other, "other"));
+    }
+
+    public MemberSelector not() {
+        SelectorConstant negated = switch (constant) {
+            case UNIVERSAL -> SelectorConstant.EMPTY;
+            case EMPTY -> SelectorConstant.UNIVERSAL;
+            case CONDITIONAL -> SelectorConstant.CONDITIONAL;
+        };
+        return new MemberSelector(
+                SelectorDescriptions.not(description),
+                (member, context) -> !matcher.matches(member, context),
+                negated);
+    }
+
+    public MemberSelector excluding(MemberSelector exclusion) {
+        MemberSelector value = Objects.requireNonNull(exclusion, "exclusion");
+        SelectorConstant result = constant == SelectorConstant.EMPTY
+                        || value.constant == SelectorConstant.UNIVERSAL
+                ? SelectorConstant.EMPTY
+                : value.constant == SelectorConstant.EMPTY ? constant : SelectorConstant.CONDITIONAL;
+        Matcher combined = result == SelectorConstant.CONDITIONAL
+                ? (member, context) -> matcher.matches(member, context)
+                        && !value.matcher.matches(member, context)
+                : (member, context) -> result == SelectorConstant.UNIVERSAL;
+        return new MemberSelector(
+                SelectorDescriptions.excluding(description, value.description),
+                combined,
+                result);
+    }
+
     public MemberSelection selectFrom(Collection<JavaType> types) {
         return select(types, List.of(), List.of(), List.of());
     }
@@ -239,6 +333,23 @@ public final class MemberSelector {
         return new MemberSelector(
                 new SelectorDescription(description),
                 (member, context) -> member.kind() == kind);
+    }
+
+    private static List<MemberSelector> stable(
+            Collection<MemberSelector> selectors, String operator) {
+        Objects.requireNonNull(selectors, "selectors");
+        List<MemberSelector> values = selectors.stream()
+                .map(value -> Objects.requireNonNull(value, "selector"))
+                .sorted(java.util.Comparator.comparing(value -> value.description.text()))
+                .toList();
+        if (values.isEmpty()) {
+            throw new IllegalArgumentException(operator + " group must contain at least one selector");
+        }
+        return values;
+    }
+
+    private static List<SelectorDescription> descriptions(List<MemberSelector> selectors) {
+        return selectors.stream().map(MemberSelector::description).toList();
     }
 
     private static String validatedDescriptor(String descriptor) {

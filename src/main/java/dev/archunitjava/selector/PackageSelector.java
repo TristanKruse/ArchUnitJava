@@ -15,15 +15,69 @@ import java.util.Objects;
 public final class PackageSelector {
     private final SelectorDescription description;
     private final Matcher matcher;
+    private final SelectorConstant constant;
 
     private PackageSelector(SelectorDescription description, Matcher matcher) {
+        this(description, matcher, SelectorConstant.CONDITIONAL);
+    }
+
+    private PackageSelector(
+            SelectorDescription description, Matcher matcher, SelectorConstant constant) {
         this.description = Objects.requireNonNull(description, "description");
         this.matcher = Objects.requireNonNull(matcher, "matcher");
+        this.constant = Objects.requireNonNull(constant, "constant");
     }
 
     public static PackageSelector all() {
         return new PackageSelector(
-                new SelectorDescription("all packages"), (value, context) -> true);
+                new SelectorDescription("all packages"), (value, context) -> true,
+                SelectorConstant.UNIVERSAL);
+    }
+
+    public static PackageSelector none() {
+        return new PackageSelector(
+                new SelectorDescription("no packages"), (value, context) -> false,
+                SelectorConstant.EMPTY);
+    }
+
+    public static PackageSelector allOf(PackageSelector... selectors) {
+        return allOf(List.of(Objects.requireNonNull(selectors, "selectors").clone()));
+    }
+
+    public static PackageSelector allOf(Collection<PackageSelector> selectors) {
+        List<PackageSelector> values = stable(selectors, "AND");
+        SelectorConstant constant = values.stream().anyMatch(value -> value.constant == SelectorConstant.EMPTY)
+                ? SelectorConstant.EMPTY
+                : values.stream().allMatch(value -> value.constant == SelectorConstant.UNIVERSAL)
+                        ? SelectorConstant.UNIVERSAL : SelectorConstant.CONDITIONAL;
+        Matcher matcher = constant == SelectorConstant.CONDITIONAL
+                ? (value, context) -> values.stream().allMatch(selector ->
+                        selector.matcher.matches(value, context))
+                : (value, context) -> constant == SelectorConstant.UNIVERSAL;
+        return new PackageSelector(
+                SelectorDescriptions.group("AND", descriptions(values)),
+                matcher,
+                constant);
+    }
+
+    public static PackageSelector anyOf(PackageSelector... selectors) {
+        return anyOf(List.of(Objects.requireNonNull(selectors, "selectors").clone()));
+    }
+
+    public static PackageSelector anyOf(Collection<PackageSelector> selectors) {
+        List<PackageSelector> values = stable(selectors, "OR");
+        SelectorConstant constant = values.stream().anyMatch(value -> value.constant == SelectorConstant.UNIVERSAL)
+                ? SelectorConstant.UNIVERSAL
+                : values.stream().allMatch(value -> value.constant == SelectorConstant.EMPTY)
+                        ? SelectorConstant.EMPTY : SelectorConstant.CONDITIONAL;
+        Matcher matcher = constant == SelectorConstant.CONDITIONAL
+                ? (value, context) -> values.stream().anyMatch(selector ->
+                        selector.matcher.matches(value, context))
+                : (value, context) -> constant == SelectorConstant.UNIVERSAL;
+        return new PackageSelector(
+                SelectorDescriptions.group("OR", descriptions(values)),
+                matcher,
+                constant);
     }
 
     public static PackageSelector name(JavaPattern pattern) {
@@ -78,6 +132,46 @@ public final class PackageSelector {
         return description;
     }
 
+    public SelectorConstant constant() {
+        return constant;
+    }
+
+    public PackageSelector and(PackageSelector other) {
+        return allOf(this, Objects.requireNonNull(other, "other"));
+    }
+
+    public PackageSelector or(PackageSelector other) {
+        return anyOf(this, Objects.requireNonNull(other, "other"));
+    }
+
+    public PackageSelector not() {
+        SelectorConstant negated = switch (constant) {
+            case UNIVERSAL -> SelectorConstant.EMPTY;
+            case EMPTY -> SelectorConstant.UNIVERSAL;
+            case CONDITIONAL -> SelectorConstant.CONDITIONAL;
+        };
+        return new PackageSelector(
+                SelectorDescriptions.not(description),
+                (value, context) -> !matcher.matches(value, context),
+                negated);
+    }
+
+    public PackageSelector excluding(PackageSelector exclusion) {
+        PackageSelector value = Objects.requireNonNull(exclusion, "exclusion");
+        SelectorConstant result = constant == SelectorConstant.EMPTY
+                        || value.constant == SelectorConstant.UNIVERSAL
+                ? SelectorConstant.EMPTY
+                : value.constant == SelectorConstant.EMPTY ? constant : SelectorConstant.CONDITIONAL;
+        Matcher combined = result == SelectorConstant.CONDITIONAL
+                ? (candidate, context) -> matcher.matches(candidate, context)
+                        && !value.matcher.matches(candidate, context)
+                : (candidate, context) -> result == SelectorConstant.UNIVERSAL;
+        return new PackageSelector(
+                SelectorDescriptions.excluding(description, value.description),
+                combined,
+                result);
+    }
+
     boolean matches(JavaPackage value, TypeSelectionContext context) {
         return matcher.matches(Objects.requireNonNull(value, "package"),
                 Objects.requireNonNull(context, "context"));
@@ -124,6 +218,23 @@ public final class PackageSelector {
                 classFileDiagnostics,
                 modelDiagnostics,
                 List.copyOf(context.diagnostics()));
+    }
+
+    private static List<PackageSelector> stable(
+            Collection<PackageSelector> selectors, String operator) {
+        Objects.requireNonNull(selectors, "selectors");
+        List<PackageSelector> values = selectors.stream()
+                .map(value -> Objects.requireNonNull(value, "selector"))
+                .sorted(java.util.Comparator.comparing(value -> value.description.text()))
+                .toList();
+        if (values.isEmpty()) {
+            throw new IllegalArgumentException(operator + " group must contain at least one selector");
+        }
+        return values;
+    }
+
+    private static List<SelectorDescription> descriptions(List<PackageSelector> selectors) {
+        return selectors.stream().map(PackageSelector::description).toList();
     }
 
     @FunctionalInterface

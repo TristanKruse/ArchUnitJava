@@ -24,24 +24,42 @@ public final class RuleTerminal {
             int selectedCount,
             RuleResultFactory ordinaryEvaluation) {
         Objects.requireNonNull(metadata, "metadata");
+        return evaluate(
+                metadata,
+                options,
+                List.of(new RuleSelection("subjects", selector, selectedCount)),
+                ordinaryEvaluation);
+    }
+
+    public static RuleResult evaluate(
+            RuleMetadata metadata,
+            CheckOptions options,
+            List<RuleSelection> selections,
+            RuleResultFactory ordinaryEvaluation) {
+        Objects.requireNonNull(metadata, "metadata");
         Objects.requireNonNull(options, "options");
-        Objects.requireNonNull(selector, "selector");
-        if (selectedCount < 0) {
-            throw new IllegalArgumentException("selectedCount must not be negative");
-        }
+        Objects.requireNonNull(selections, "selections");
+        List<RuleSelection> empty = selections.stream()
+                .map(value -> Objects.requireNonNull(value, "selection"))
+                .filter(value -> value.selectedCount() == 0)
+                .sorted(java.util.Comparator.comparing(RuleSelection::role)
+                        .thenComparing(value -> value.selector().text()))
+                .toList();
         Objects.requireNonNull(ordinaryEvaluation, "ordinaryEvaluation");
-        if (selectedCount > 0 || options.emptySelectionPolicy() == EmptySelectionPolicy.ALLOW) {
+        if (empty.isEmpty() || options.emptySelectionPolicy() == EmptySelectionPolicy.ALLOW) {
             return requireMetadata(metadata, ordinaryEvaluation.create(List.of()));
         }
-        Diagnostic diagnostic = diagnostic(selector, options.emptySelectionPolicy());
+        List<Diagnostic> diagnostics = empty.stream()
+                .map(value -> diagnostic(value, options.emptySelectionPolicy()))
+                .toList();
         if (options.emptySelectionPolicy() == EmptySelectionPolicy.WARN) {
-            return requireMetadata(metadata, ordinaryEvaluation.create(List.of(diagnostic)));
+            return requireMetadata(metadata, ordinaryEvaluation.create(diagnostics));
         }
-        return RuleResult.incomplete(metadata, List.of(), List.of(diagnostic));
+        return RuleResult.incomplete(metadata, List.of(), diagnostics);
     }
 
     private static Diagnostic diagnostic(
-            SelectorDescription selector, EmptySelectionPolicy policy) {
+            RuleSelection selection, EmptySelectionPolicy policy) {
         Severity severity = policy == EmptySelectionPolicy.FAIL ? Severity.ERROR : Severity.WARNING;
         return new Diagnostic(
                 EMPTY_SELECTION_CODE,
@@ -50,7 +68,8 @@ public final class RuleTerminal {
                         "policy", policy.name(),
                         "remediation",
                                 "Correct the selector or deliberately choose ALLOW/WARN in CheckOptions",
-                        "selector", selector.text()));
+                        "role", selection.role(),
+                        "selector", selection.selector().text()));
     }
 
     private static RuleResult requireMetadata(RuleMetadata metadata, RuleResult result) {

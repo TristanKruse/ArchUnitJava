@@ -8,17 +8,17 @@ import java.util.TreeMap;
 
 /** Immutable result of one rule evaluation, with an explicit non-overlapping terminal state. */
 public final class RuleResult implements Comparable<RuleResult> {
-    private final String ruleId;
+    private final RuleMetadata metadata;
     private final RuleStatus status;
     private final List<Violation> violations;
     private final List<Diagnostic> diagnostics;
 
     private RuleResult(
-            String ruleId,
+            RuleMetadata metadata,
             RuleStatus status,
             List<Violation> violations,
             List<Diagnostic> diagnostics) {
-        this.ruleId = ResultValues.requireText(ruleId, "rule id");
+        this.metadata = Objects.requireNonNull(metadata, "metadata");
         this.status = Objects.requireNonNull(status, "status");
         this.violations = normalizeViolations(violations);
         this.diagnostics = ResultValues.sortedDistinct(diagnostics, "diagnostics");
@@ -30,25 +30,51 @@ public final class RuleResult implements Comparable<RuleResult> {
     }
 
     public static RuleResult passed(String ruleId, List<Diagnostic> diagnostics) {
-        return new RuleResult(ruleId, RuleStatus.PASSED, List.of(), diagnostics);
+        return passed(RuleMetadata.of(ruleId, ruleId), diagnostics);
+    }
+
+    public static RuleResult passed(RuleMetadata metadata) {
+        return passed(metadata, List.of());
+    }
+
+    public static RuleResult passed(RuleMetadata metadata, List<Diagnostic> diagnostics) {
+        return new RuleResult(metadata, RuleStatus.PASSED, List.of(), diagnostics);
     }
 
     public static RuleResult failed(
             String ruleId, List<Violation> violations, List<Diagnostic> diagnostics) {
-        return new RuleResult(ruleId, RuleStatus.FAILED, violations, diagnostics);
+        return failed(RuleMetadata.of(ruleId, ruleId), violations, diagnostics);
+    }
+
+    public static RuleResult failed(
+            RuleMetadata metadata, List<Violation> violations, List<Diagnostic> diagnostics) {
+        return new RuleResult(metadata, RuleStatus.FAILED, violations, diagnostics);
     }
 
     public static RuleResult skipped(String ruleId, List<Diagnostic> diagnostics) {
-        return new RuleResult(ruleId, RuleStatus.SKIPPED, List.of(), diagnostics);
+        return skipped(RuleMetadata.of(ruleId, ruleId), diagnostics);
+    }
+
+    public static RuleResult skipped(RuleMetadata metadata, List<Diagnostic> diagnostics) {
+        return new RuleResult(metadata, RuleStatus.SKIPPED, List.of(), diagnostics);
     }
 
     public static RuleResult incomplete(
             String ruleId, List<Violation> violations, List<Diagnostic> diagnostics) {
-        return new RuleResult(ruleId, RuleStatus.INCOMPLETE, violations, diagnostics);
+        return incomplete(RuleMetadata.of(ruleId, ruleId), violations, diagnostics);
+    }
+
+    public static RuleResult incomplete(
+            RuleMetadata metadata, List<Violation> violations, List<Diagnostic> diagnostics) {
+        return new RuleResult(metadata, RuleStatus.INCOMPLETE, violations, diagnostics);
     }
 
     public String ruleId() {
-        return ruleId;
+        return metadata.semanticIdentity();
+    }
+
+    public RuleMetadata metadata() {
+        return metadata;
     }
 
     public RuleStatus status() {
@@ -70,7 +96,7 @@ public final class RuleResult implements Comparable<RuleResult> {
     @Override
     public boolean equals(Object other) {
         return other instanceof RuleResult result
-                && ruleId.equals(result.ruleId)
+                && metadata.equals(result.metadata)
                 && status == result.status
                 && violations.equals(result.violations)
                 && diagnostics.equals(result.diagnostics);
@@ -78,12 +104,12 @@ public final class RuleResult implements Comparable<RuleResult> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(ruleId, status, violations, diagnostics);
+        return Objects.hash(metadata, status, violations, diagnostics);
     }
 
     @Override
     public int compareTo(RuleResult other) {
-        int result = ruleId.compareTo(other.ruleId);
+        int result = metadata.compareTo(other.metadata);
         if (result != 0) return result;
         result = status.compareTo(other.status);
         if (result != 0) return result;
@@ -93,7 +119,7 @@ public final class RuleResult implements Comparable<RuleResult> {
 
     @Override
     public String toString() {
-        return "RuleResult[ruleId=" + ruleId + ", status=" + status + ", violations="
+        return "RuleResult[ruleId=" + ruleId() + ", status=" + status + ", violations="
                 + violations.size() + ", diagnostics=" + diagnostics.size() + ']';
     }
 

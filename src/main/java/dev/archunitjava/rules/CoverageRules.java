@@ -104,7 +104,7 @@ public final class CoverageRules {
             TypeModelResult model,
             ModuleSelector subjects,
             Collection<ModuleCoveragePolicy> policies) {
-        return modules(model, subjects, null, policies);
+        return modules(model, subjects, ModuleSelector.none(), policies);
     }
 
     public static ArchitectureRule modules(
@@ -114,12 +114,11 @@ public final class CoverageRules {
             Collection<ModuleCoveragePolicy> policies) {
         Objects.requireNonNull(model, "model");
         ModuleSelector subjectSelector = Objects.requireNonNull(subjects, "subjects");
+        ModuleSelector exclusionSelector = Objects.requireNonNull(exclusions, "exclusions");
         List<ModuleCoveragePolicy> definitions = modulePolicies(policies);
-        Set<ModuleIdentityId> excluded = exclusions == null
-                ? Set.of()
-                : exclusions.selectFrom(model).selected().stream()
-                        .map(module -> ModuleIdentityId.of(module.identity()))
-                        .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        Set<ModuleIdentityId> excluded = exclusionSelector.selectFrom(model).selected().stream()
+                .map(module -> ModuleIdentityId.of(module.identity()))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
         List<Candidate> candidates = subjectSelector.selectFrom(model).selected().stream()
                 .map(CoverageRules::moduleCandidate)
                 .filter(candidate -> !excluded.contains(candidate.id()))
@@ -132,10 +131,11 @@ public final class CoverageRules {
                                 .map(module -> (StableId) ModuleIdentityId.of(module.identity()))
                                 .collect(java.util.stream.Collectors.toUnmodifiableSet())))
                 .toList();
-        SelectorDescription effective = exclusions == null
-                ? subjectSelector.description()
-                : effective(subjectSelector.description(), exclusions.description());
-        return rule("modules", effective, candidates, assignments);
+        return rule(
+                "modules",
+                effective(subjectSelector.description(), exclusionSelector.description()),
+                candidates,
+                assignments);
     }
 
     private static ArchitectureRule rule(

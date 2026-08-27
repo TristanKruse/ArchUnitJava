@@ -173,6 +173,11 @@ class CoverageRulesTest {
                 List.of(
                         TypeCoveragePolicy.named("same", TypeSelector.all()),
                         TypeCoveragePolicy.named("same", TypeSelector.none()))));
+        assertThrows(NullPointerException.class, () -> CoverageRules.modules(
+                new TypeModelResult(List.of(), List.of(), List.of()),
+                ModuleSelector.all(),
+                null,
+                List.of(ModuleCoveragePolicy.named("all", ModuleSelector.all()))));
     }
 
     private static TypeSelector packages(String expression) {

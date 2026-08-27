@@ -23,6 +23,10 @@ public final class ModuleSelector {
         return new ModuleSelector(new SelectorDescription("all modules"), module -> true);
     }
 
+    public static ModuleSelector none() {
+        return new ModuleSelector(new SelectorDescription("no modules"), module -> false);
+    }
+
     public static ModuleSelector kind(JavaModuleKind kind) {
         JavaModuleKind value = Objects.requireNonNull(kind, "kind");
         return new ModuleSelector(

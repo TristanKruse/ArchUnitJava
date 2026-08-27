@@ -270,7 +270,9 @@ public final class ModuleDescriptorRules {
             case QUALIFIED -> directive.qualified();
         };
         boolean targetMatches = spec.targetModule()
-                .map(pattern -> directive.targetModules().stream().anyMatch(pattern::matches))
+                .map(pattern -> spec.mode() == ModuleRuleMode.ONLY
+                        ? directive.targetModules().stream().allMatch(pattern::matches)
+                        : directive.targetModules().stream().anyMatch(pattern::matches))
                 .orElse(true);
         return new Declaration(
                 directive.packageName().value() + "->" + directive.targetModules(),

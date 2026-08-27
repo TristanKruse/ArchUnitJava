@@ -2,6 +2,7 @@ package dev.archunitjava.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.archunitjava.graph.DependencyEvidence;
 import dev.archunitjava.graph.DependencyGraph;
@@ -109,11 +110,20 @@ class ModuleDescriptorRulesTest {
                 exact("app.friend"),
                 ModulePackageRuleSpec.required().targetedTo(exact("friend.missing")),
                 NonExplicitModulePolicy.REJECT).check();
+        var mixedOnlyTargets = ModuleDescriptorRules.exports(
+                explicitModel,
+                appModule(),
+                exact("app.friend"),
+                ModulePackageRuleSpec.only().targetedTo(exact("friend.one")),
+                NonExplicitModulePolicy.REJECT).check();
 
         assertEquals(RuleStatus.PASSED, unqualified.status());
         assertEquals(RuleStatus.PASSED, qualified.status());
         assertEquals(RuleStatus.PASSED, open.status());
         assertEquals(RuleStatus.FAILED, wrongTarget.status());
+        assertEquals(RuleStatus.FAILED, mixedOnlyTargets.status());
+        assertTrue(mixedOnlyTargets.violations().stream().anyMatch(value ->
+                value.attributes().get("declaration").startsWith("app.friend->")));
     }
 
     @Test

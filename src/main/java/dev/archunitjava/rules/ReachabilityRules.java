@@ -73,6 +73,7 @@ public final class ReachabilityRules {
         TypeSelector reflectionSelector = Objects.requireNonNull(
                 reflectionSensitive, "reflectionSensitive");
         TypeSelector ignoredSelector = Objects.requireNonNull(ignored, "ignored");
+        ReachabilityRuleOptions value = Objects.requireNonNull(options, "options");
         TypeSelection subjectSelection = subjectSelector.selectFrom(model);
         TypeSelection rootSelection = rootSelector.selectFrom(model);
         TypeSelection externalSelection = externalSelector.selectFrom(model);
@@ -96,10 +97,10 @@ public final class ReachabilityRules {
                 known,
                 declarations,
                 ProjectionPlan.types()
-                        .includingOnly(options.includedKinds())
+                        .includingOnly(value.includedKinds())
                         .withoutSelfEdges()
                         .apply(graph).graph(),
-                options));
+                value));
     }
 
     public static ArchitectureRule unreachablePublicLibraryPackages(
@@ -132,6 +133,7 @@ public final class ReachabilityRules {
         PackageSelector reflectionSelector = Objects.requireNonNull(
                 reflectionSensitive, "reflectionSensitive");
         PackageSelector ignoredSelector = Objects.requireNonNull(ignored, "ignored");
+        ReachabilityRuleOptions value = Objects.requireNonNull(options, "options");
         PackageSelection subjectSelection = subjectSelector.selectFrom(model);
         PackageSelection rootSelection = rootSelector.selectFrom(model);
         PackageSelection externalSelection = externalSelector.selectFrom(model);
@@ -154,10 +156,10 @@ public final class ReachabilityRules {
                 packageIds(packages),
                 packageDeclarations(packages),
                 ProjectionPlan.packages()
-                        .includingOnly(options.includedKinds())
+                        .includingOnly(value.includedKinds())
                         .withoutSelfEdges()
                         .apply(graph).graph(),
-                options));
+                value));
     }
 
     private static ArchitectureRule rule(Domain domain) {
@@ -289,8 +291,7 @@ public final class ReachabilityRules {
         Set<StableId> ids = new HashSet<>(included);
         ids.removeAll(new HashSet<>(excluded));
         DependencyGraph.Builder result = DependencyGraph.builder();
-        source.nodes().stream().map(node -> node.id()).filter(ids::contains)
-                .forEach(result::addNode);
+        ids.stream().sorted().forEach(result::addNode);
         source.edges().stream()
                 .filter(edge -> ids.contains(edge.origin()) && ids.contains(edge.target()))
                 .forEach(edge -> edge.evidence().forEach(evidence -> result.addDependency(

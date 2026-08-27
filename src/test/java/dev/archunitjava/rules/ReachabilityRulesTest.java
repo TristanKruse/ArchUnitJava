@@ -65,7 +65,7 @@ class ReachabilityRulesTest {
                 .addNode(EXTERNAL).addNode(EXTERNAL_DEPENDENCY)
                 .addNode(REFLECTION).addNode(REFLECTED)
                 .addNode(IGNORED).addNode(BEHIND_IGNORED)
-                .addNode(DEAD_A).addNode(DEAD_B).addNode(ORPHAN)
+                .addNode(DEAD_A).addNode(DEAD_B)
                 .addDependency(ENTRY, SERVICE, DependencyKind.METHOD_CALL, evidence(10))
                 .addDependency(SERVICE, UTIL, DependencyKind.FIELD_TYPE, evidence(20))
                 .addDependency(EXTERNAL, EXTERNAL_DEPENDENCY, DependencyKind.METHOD_CALL, evidence(30))

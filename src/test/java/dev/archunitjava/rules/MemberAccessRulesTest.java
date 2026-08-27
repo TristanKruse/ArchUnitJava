@@ -1,6 +1,7 @@
 package dev.archunitjava.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.archunitjava.importer.ClassFileInput;
@@ -186,6 +187,16 @@ class MemberAccessRulesTest {
         assertEquals(RuleStatus.FAILED, included.check().status());
         assertEquals("true", included.check().violations().getFirst()
                 .attributes().get("compilerCreated"));
+    }
+
+    @Test
+    void symbolicTargetIdentifiersRejectMalformedJvmDescriptors() {
+        assertThrows(IllegalArgumentException.class, () ->
+                new SymbolicMemberTargetId("I", "work", "()V"));
+        assertThrows(IllegalArgumentException.class, () ->
+                new SymbolicMemberTargetId("Ltarget/Service;", "work", "broken"));
+        assertThrows(IllegalArgumentException.class, () ->
+                new SymbolicMemberTargetId("Ltarget/Service;", "<init>", "()I"));
     }
 
     private MemberSelector caller(String name) {

@@ -9,7 +9,6 @@ import dev.archunitjava.model.HierarchyRelationship;
 import dev.archunitjava.model.HierarchyRelationshipKind;
 import dev.archunitjava.model.JavaType;
 import dev.archunitjava.model.JavaTypeKind;
-import dev.archunitjava.model.SealedHierarchyResult;
 import dev.archunitjava.model.TypeHierarchy;
 import dev.archunitjava.model.TypeModelResult;
 import dev.archunitjava.result.Diagnostic;
@@ -128,8 +127,7 @@ public final class InheritanceRules {
     private static Analysis analyze(
             JavaType subject, Domain domain, HierarchyRuleSpec spec) {
         if (spec.relation() == HierarchyRelation.PERMITS) {
-            SealedHierarchyResult sealed = domain.hierarchy.sealedHierarchy(subject.binaryName());
-            List<PathMatch> matches = sealed.declaredPermittedSubclasses().stream()
+            List<PathMatch> matches = subject.permittedSubclasses().stream()
                     .map(value -> value.binaryName())
                     .filter(domain.targetNames::contains)
                     .map(target -> new PathMatch(
@@ -138,11 +136,7 @@ public final class InheritanceRules {
                             evidence(List.of(subject.binaryName(), target), domain.declarations),
                             "PERMITTED_SUBCLASS"))
                     .toList();
-            String details = "sealedDiagnostics=" + sealed.diagnostics().stream()
-                    .map(value -> value.code().name()).toList()
-                    + ", missing=" + sealed.missingPermittedSubclasses().stream()
-                            .map(value -> value.binaryName()).toList();
-            return new Analysis(matches, !sealed.complete(), details);
+            return new Analysis(matches, false, "declared PermittedSubclasses attribute");
         }
 
         List<PathMatch> matches = relationshipPaths(subject, domain, spec);

@@ -134,6 +134,9 @@ class InheritanceRulesTest {
         assertEquals("PERMITTED_SUBCLASS",
                 forbidden.violations().getFirst().attributes().get("terminalRelationship"));
         assertFalse(forbidden.violations().getFirst().evidence().isEmpty());
+        assertEquals(RuleStatus.PASSED, rule(
+                "sealed.Root", "api.Contract",
+                HierarchyRuleSpec.permitting(HierarchyRuleMode.MUST_NOT_MATCH)).check().status());
     }
 
     private ArchitectureRule rule(

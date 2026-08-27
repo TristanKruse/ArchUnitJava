@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.NestHostAttribute;
+import java.lang.classfile.attribute.InnerClassInfo;
+import java.lang.classfile.attribute.InnerClassesAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.constant.ModuleDesc;
@@ -24,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -104,6 +107,8 @@ class PublicInterfaceRulesTest {
                 value.attributes().get("moduleExport").equals("PACKAGE_NOT_EXPORTED")));
         assertTrue(result.violations().stream().allMatch(value ->
                 value.attributes().get("javaAccess").equals("PUBLIC")));
+        assertTrue(result.violations().stream().allMatch(value ->
+                value.attributes().get("approvedEntryPoint").equals("<none>")));
     }
 
     @Test
@@ -120,6 +125,40 @@ class PublicInterfaceRulesTest {
         assertEquals("NOT_MODELED", blindSpots.context().get("runtimeAddExports"));
         assertTrue(result.diagnostics().stream()
                 .anyMatch(value -> value.code().equals("public-interface.unresolved-targets")));
+    }
+
+    @Test
+    void publicNestedTypeInsidePackagePrivateOwnerIsNotPubliclyVisible() throws IOException {
+        ClassDesc outer = ClassDesc.of("internal.Outer");
+        ClassDesc nested = ClassDesc.of("internal.Outer$Nested");
+        write(temporaryDirectory, "internal/Outer.class", ClassFile.of().build(
+                outer, builder -> builder.withFlags(0)));
+        write(temporaryDirectory, "internal/Outer$Nested.class", ClassFile.of().build(
+                nested, builder -> builder
+                        .withFlags(ClassFile.ACC_PUBLIC)
+                        .with(InnerClassesAttribute.of(InnerClassInfo.of(
+                                nested, Optional.of(outer), Optional.of("Nested"),
+                                ClassFile.ACC_PUBLIC)))
+                        .withMethodBody("work", NO_ARGS, ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                                code -> code.return_())));
+        write(temporaryDirectory, "client/NestedConsumer.class", ClassFile.of().build(
+                ClassDesc.of("client.NestedConsumer"), builder -> builder
+                        .withMethodBody("use", NO_ARGS, ClassFile.ACC_PUBLIC,
+                                code -> code.invokestatic(nested, "work", NO_ARGS).return_())));
+        TypeModelResult model = importInputs(temporaryDirectory);
+        assertEquals("internal.Outer", model.types().stream()
+                .filter(type -> type.binaryName().equals("internal.Outer$Nested"))
+                .findFirst().orElseThrow().nesting().lexicalOwner().orElseThrow().binaryName());
+
+        var result = PublicInterfaceRules.onlyAccessApprovedInterfaces(
+                model,
+                member("client.NestedConsumer", "use"),
+                binary("internal.Outer$Nested"),
+                member("internal.Outer$Nested", "work")).check();
+
+        assertEquals(RuleStatus.FAILED, result.status());
+        assertEquals("false", result.violations().getFirst().attributes().get("publicType"));
+        assertEquals("<none>", result.violations().getFirst().attributes().get("approvedEntryPoint"));
     }
 
     private ArchitectureRule rule(TypeModelResult model, String caller) {

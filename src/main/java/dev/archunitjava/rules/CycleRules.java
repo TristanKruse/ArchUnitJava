@@ -274,9 +274,11 @@ public final class CycleRules {
         Set<TypeId> syntheticTypes = new HashSet<>();
         for (JavaType type : model.types()) {
             TypeId typeId = TypeId.ofBinaryName(type.binaryName());
-            if (type.modifiers().contains(JavaModifier.SYNTHETIC)) syntheticTypes.add(typeId);
+            boolean syntheticType = type.modifiers().contains(JavaModifier.SYNTHETIC);
+            if (syntheticType) syntheticTypes.add(typeId);
             for (JavaMember member : type.declaredMembers()) {
-                if (member.modifiers().contains(JavaMemberModifier.SYNTHETIC)
+                if (syntheticType
+                        || member.modifiers().contains(JavaMemberModifier.SYNTHETIC)
                         || member.modifiers().contains(JavaMemberModifier.BRIDGE)) {
                     syntheticMembers.add(MemberId.of(
                             typeId, member.name(), member.descriptor()));

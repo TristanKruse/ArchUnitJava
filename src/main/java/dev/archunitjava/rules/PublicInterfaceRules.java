@@ -137,7 +137,7 @@ public final class PublicInterfaceRules {
     private static Assessment assess(JavaType caller, ResolvedTarget target, Domain domain) {
         boolean approvedType = domain.approvedTypes.contains(target.type.name());
         boolean approvedMember = domain.approvedMembers.contains(target.member.signature());
-        boolean publicType = target.type.modifiers().contains(JavaModifier.PUBLIC);
+        boolean publicType = publiclyVisible(target.type, domain);
         boolean publicMember = target.member.modifiers().contains(JavaMemberModifier.PUBLIC);
         JavaAccessVisibility visibility = visibility(caller, target);
         ModuleExportAccess export = exportAccess(caller, target.type, domain);
@@ -232,7 +232,7 @@ public final class PublicInterfaceRules {
         TreeMap<String, String> attributes = new TreeMap<>();
         attributes.put("approvedMember", Boolean.toString(assessment.approvedMember));
         attributes.put("approvedType", Boolean.toString(assessment.approvedType));
-        attributes.put("approvedEntryPoint", approvedEntryPoint(target, domain));
+        attributes.put("approvedEntryPoint", approvedEntryPoint(callerType, target, domain));
         attributes.put("callerPackage", callerType.packageName().value());
         attributes.put("javaAccess", assessment.visibility.name());
         attributes.put("moduleExport", assessment.exportAccess.name());
@@ -259,12 +259,22 @@ public final class PublicInterfaceRules {
                 attributes);
     }
 
-    private static String approvedEntryPoint(ResolvedTarget target, Domain domain) {
+    private static String approvedEntryPoint(
+            JavaType caller, ResolvedTarget target, Domain domain) {
         List<JavaMemberSignature> candidates = domain.approvedMembers.stream()
                 .filter(signature -> domain.approvedTypes.contains(signature.owner()))
                 .map(domain.members::get)
                 .filter(Objects::nonNull)
                 .filter(member -> member.modifiers().contains(JavaMemberModifier.PUBLIC))
+                .filter(member -> {
+                    JavaType owner = domain.types.get(member.owner().binaryName());
+                    return owner != null
+                            && publiclyVisible(owner, domain)
+                            && switch (exportAccess(caller, owner, domain)) {
+                                case PACKAGE_NOT_EXPORTED, QUALIFIED_EXPORT_TO_OTHER_MODULES -> false;
+                                default -> true;
+                            };
+                })
                 .filter(member -> member.name().equals(target.member.name()))
                 .filter(member -> member.descriptor().equals(target.member.descriptor()))
                 .map(JavaMember::signature)
@@ -272,6 +282,22 @@ public final class PublicInterfaceRules {
                 .toList();
         return candidates.size() == 1 ? candidates.getFirst().stableKey()
                 : candidates.isEmpty() ? "<none>" : "<ambiguous>";
+    }
+
+    private static boolean publiclyVisible(JavaType type, Domain domain) {
+        Set<dev.archunitjava.model.JavaTypeName> visited = new TreeSet<>();
+        JavaType current = type;
+        while (true) {
+            if (!visited.add(current.name())
+                    || !current.modifiers().contains(JavaModifier.PUBLIC)) {
+                return false;
+            }
+            Optional<dev.archunitjava.model.JavaTypeName> lexicalOwner =
+                    current.nesting().lexicalOwner();
+            if (lexicalOwner.isEmpty()) return true;
+            current = domain.types.get(lexicalOwner.orElseThrow().binaryName());
+            if (current == null) return false;
+        }
     }
 
     private static MemberId memberId(JavaMemberSignature signature) {

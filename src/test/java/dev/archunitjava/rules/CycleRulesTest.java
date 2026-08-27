@@ -35,8 +35,10 @@ class CycleRulesTest {
     private static final TypeId B = TypeId.ofBinaryName("app.B");
     private static final TypeId C = TypeId.ofBinaryName("app.C");
     private static final TypeId D = TypeId.ofBinaryName("other.D");
+    private static final TypeId GENERATED = TypeId.ofBinaryName("app.Generated");
     private static final MemberId A_BRIDGE = MemberId.of(A, "bridge", "()V");
     private static final MemberId B_WORK = MemberId.of(B, "work", "()V");
+    private static final MemberId GENERATED_WORK = MemberId.of(GENERATED, "work", "()V");
 
     @TempDir Path temporaryDirectory;
     private TypeModelResult model;
@@ -47,6 +49,7 @@ class CycleRulesTest {
         write("app/B.class", type("app.B", false));
         write("app/C.class", type("app.C", false));
         write("other/D.class", type("other.D", false));
+        write("app/Generated.class", syntheticType("app.Generated"));
         var resources = new ClassFileInputEnumerator()
                 .enumerate(List.of(ClassFileInput.directory(temporaryDirectory)))
                 .resources();
@@ -149,6 +152,26 @@ class CycleRulesTest {
         assertEquals(List.of(outward, inward), result.violations().getFirst().evidence());
     }
 
+    @Test
+    void ordinaryMemberOnSyntheticTypeStillProducesSyntheticEvidence() {
+        DependencyGraph graph = DependencyGraph.builder()
+                .addNode(GENERATED).addNode(B)
+                .addDependency(
+                        GENERATED, B, DependencyKind.METHOD_CALL, evidence(GENERATED_WORK, 70))
+                .addDependency(B, GENERATED, DependencyKind.METHOD_CALL, evidence(B_WORK, 80))
+                .build();
+
+        assertEquals(RuleStatus.PASSED,
+                CycleRules.typesAreAcyclic(model, graph, packages("app")).check().status());
+        assertEquals(RuleStatus.FAILED,
+                CycleRules.typesAreAcyclic(
+                        model,
+                        graph,
+                        packages("app"),
+                        CycleRuleOptions.defaults().withSyntheticEdges(SyntheticEdgePolicy.INCLUDE))
+                        .check().status());
+    }
+
     private static byte[] type(String binaryName, boolean syntheticBridge) {
         return ClassFile.of().build(ClassDesc.of(binaryName), builder -> {
             builder.withMethodBody(
@@ -161,6 +184,14 @@ class CycleRulesTest {
                         code -> code.return_());
             }
         });
+    }
+
+    private static byte[] syntheticType(String binaryName) {
+        return ClassFile.of().build(ClassDesc.of(binaryName), builder -> builder
+                .withFlags(ClassFile.ACC_SYNTHETIC)
+                .withMethodBody(
+                        "work", MethodTypeDesc.of(ClassDesc.ofDescriptor("V")),
+                        ClassFile.ACC_PUBLIC, code -> code.return_()));
     }
 
     private static TypeSelector binary(String value) {

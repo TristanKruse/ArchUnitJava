@@ -2,6 +2,7 @@ package dev.archunitjava.report;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /** Typed-row CSV rendering of query metadata, nodes, edges, provenance, and evidence. */
@@ -63,7 +64,8 @@ public final class CsvGraphRenderer {
                 row(result, fields(
                         value.schemaVersion(),
                         "evidence",
-                        edge.id() + "/evidence/" + String.format("%06d", index + 1),
+                        edge.id() + "/evidence/"
+                                + String.format(Locale.ROOT, "%06d", index + 1),
                         edge.id(),
                         "",
                         "",
@@ -104,7 +106,7 @@ public final class CsvGraphRenderer {
             metadata(
                     out,
                     snapshot,
-                    key + "." + String.format("%06d", index + 1),
+                    key + "." + String.format(Locale.ROOT, "%06d", index + 1),
                     values.get(index));
         }
     }

@@ -1,5 +1,7 @@
 package dev.archunitjava.report;
 
+import java.util.Locale;
+
 /** Central target-string escaping for report formats. */
 final class ReportEscapes {
     private ReportEscapes() {}
@@ -73,7 +75,7 @@ final class ReportEscapes {
                             || character == '<'
                             || character == '>'
                             || character == '&') {
-                        result.append(String.format("\\u%04x", (int) character));
+                        result.append(String.format(Locale.ROOT, "\\u%04x", (int) character));
                     } else {
                         result.append(character);
                     }
@@ -114,7 +116,7 @@ final class ReportEscapes {
 
     private static void appendControlEscaped(StringBuilder result, char character) {
         if (Character.isISOControl(character)) {
-            result.append(String.format("\\u%04x", (int) character));
+            result.append(String.format(Locale.ROOT, "\\u%04x", (int) character));
         } else {
             result.append(character);
         }

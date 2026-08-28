@@ -15,6 +15,7 @@ import dev.archunitjava.layers.LayerId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -115,6 +116,23 @@ class DataAndHtmlRenderersTest {
         assertArrayEquals(HtmlGraphRenderer.renderBytes(first), HtmlGraphRenderer.renderBytes(second));
     }
 
+    @Test
+    void outputDoesNotDependOnTheProcessFormattingLocale() {
+        GraphSnapshot snapshot = snapshot(false);
+        Locale original = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.ROOT);
+            List<byte[]> root = renderedBytes(snapshot);
+            Locale.setDefault(Locale.forLanguageTag("ar-EG"));
+            List<byte[]> arabic = renderedBytes(snapshot);
+            for (int index = 0; index < root.size(); index++) {
+                assertArrayEquals(root.get(index), arabic.get(index));
+            }
+        } finally {
+            Locale.setDefault(original);
+        }
+    }
+
     private static GraphSnapshot snapshot(boolean reverse) {
         LinkedHashMap<TypeId, LayerId> mappings = new LinkedHashMap<>();
         if (reverse) {
@@ -139,6 +157,16 @@ class DataAndHtmlRenderersTest {
                 A, B, DependencyKind.METHOD_CALL, item));
         graph.addDependency(B, A, DependencyKind.FIELD_TYPE, first);
         return GraphSnapshotQuery.layers(graph.build(), mappings).snapshot();
+    }
+
+    private static List<byte[]> renderedBytes(GraphSnapshot snapshot) {
+        return List.of(
+                DotGraphRenderer.renderBytes(snapshot),
+                MermaidGraphRenderer.renderBytes(snapshot),
+                JsonGraphRenderer.renderBytes(snapshot),
+                CsvGraphRenderer.renderBytes(snapshot),
+                D2GraphRenderer.renderBytes(snapshot),
+                HtmlGraphRenderer.renderBytes(snapshot));
     }
 
     private static int occurrences(String text, String needle) {

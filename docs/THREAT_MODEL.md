@@ -13,6 +13,13 @@ annotations, module descriptors, cache files, and cached payloads. Import never 
 class, invokes target code, runs a target build, executes an annotation processor, or resolves a
 target-controlled output path.
 
+The checked-in adversarial manifest covers static initializers, `invokedynamic` bootstrap handles,
+malformed class batches, archive traversal and compression, approved-root escapes, PlantUML
+directives, selector syntax, serialized and corrupt cache data, hostile renderer strings, and
+baseline value invariants. Payloads are generated in temporary directories so the repository does
+not distribute executable fixtures. The integration test verifies that static initialization and
+bootstrap counters remain untouched after full model adaptation.
+
 ## Enforced limits
 
 `InputEnumerationOptions` bounds the number of inputs, resources, directory depth and entries,
@@ -32,6 +39,13 @@ cache envelopes fail closed with typed bounded diagnostics. Configuration files 
 there is no command, environment-variable, object-deserialization, reflection, or classloading
 seam.
 
+HTML output escapes target strings, applies explicit size limits, and embeds a restrictive content
+security policy. JSON, Mermaid, D2, and DOT quote or escape their data domains and use generated graph
+identifiers. PlantUML input is a bounded allowlisted component grammar; includes, directives, macros,
+and general PlantUML execution are rejected. Baseline domain values reject unknown schemas,
+fingerprint conflicts, and duplicate suppression IDs. There is currently no JSON baseline reader, so
+untrusted baseline text has no parsing or activation path.
+
 ## Residual risk
 
 Static parsing still consumes CPU and heap below configured limits. A large number of individually
@@ -42,3 +56,18 @@ content-addressed key; timestamps are never treated as proof of identity. The im
 unsupported or malformed constructs but cannot infer dependencies created only through reflection,
 native code, runtime code generation, service configuration not represented in analyzed metadata,
 or dynamically assembled strings.
+
+The following gaps remain release-significant:
+
+- Java regular-expression selectors are trusted policy and use the JDK regex engine without an
+  evaluation budget. Untrusted regex configuration could consume excessive CPU.
+- CSV is syntactically escaped but does not neutralize spreadsheet formulas. Consumers must import it
+  as data rather than opening untrusted reports directly in a spreadsheet application.
+- Baselines can be rendered but not read back. A future bounded JSON reader must reject duplicate
+  keys, excessive nesting/size/counts, unknown fields and schemas, invalid Unicode, and conflicting
+  fingerprints before baseline migration can be advertised.
+- `package-info.class` imports successfully, but some type-rule and component-metric entry points
+  currently reject its binary name when constructing graph identities.
+- Static analysis cannot observe behavior introduced only at runtime, and resource limits reduce but
+  cannot eliminate denial-of-service risk from expensive valid inputs, storage latency, or TOCTOU
+  replacement inside caller-approved roots.

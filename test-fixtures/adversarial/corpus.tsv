@@ -1,0 +1,17 @@
+# vector	stage	expected
+static-initializer	classfile	parsed-as-data-without-execution
+invokedynamic-bootstrap	classfile	metadata-only-without-bootstrap-invocation
+truncated-class-batch	classfile	bounded-typed-diagnostics
+zip-slip-name	archive	rejected
+absolute-archive-name	archive	rejected
+nested-archive	archive	rejected
+compression-bomb	archive	rejected-by-ratio
+approved-root-escape	configuration	rejected
+plantuml-directive	metadata	rejected
+invalid-selector-regex	selector	rejected
+serialized-cache-payload	cache	opaque-bytes-no-deserialization
+corrupt-cache-envelope	cache	replaced-with-trusted-payload
+html-script-label	renderer	escaped-and-csp-contained
+diagram-directive-label	renderer	quoted-or-escaped
+unsupported-baseline-schema	baseline	rejected-before-use
+duplicate-suppression-id	baseline	rejected-before-use

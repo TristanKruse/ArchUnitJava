@@ -111,7 +111,7 @@ final class PerformanceBaselineTest {
                     artifact.getFileName().toString(), Files.readAllBytes(artifact)));
         }
         AnalysisCacheKey key = AnalysisCacheKey.create(
-                fingerprints, 25, "performance-v1", "jdk-classfile-25", "0.0.1", 1);
+                fingerprints, 25, "performance-v1", "jdk-classfile-25", "0.1.0", 1);
         SafeAnalysisCache cache = new SafeAnalysisCache(
                 temporaryDirectory.resolve("cache-" + sha256(name.getBytes(StandardCharsets.UTF_8))),
                 Math.max(1, payload.length));

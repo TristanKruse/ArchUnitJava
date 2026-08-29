@@ -25,3 +25,49 @@ jobs:
         shell: bash
         run: ./mvnw --batch-mode --no-transfer-progress verify
 
+  release-dry-run:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Check release documentation
+        shell: bash
+        run: |
+          for file in README.md LICENSE CHANGELOG.md docs/COMPATIBILITY.md docs/MIGRATION.md docs/RELEASE.md docs/THREAT_MODEL.md; do
+            test -s "$file"
+          done
+          grep -F 'Decision: NO-GO' docs/RELEASE.md
+      - name: Build release candidate
+        shell: bash
+        run: ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests verify
+      - name: Verify reproducible primary artifact
+        shell: bash
+        run: |
+          cp target/archunitjava-0.1.0-SNAPSHOT.jar "$RUNNER_TEMP/archunitjava-first.jar"
+          ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests clean verify
+          cmp "$RUNNER_TEMP/archunitjava-first.jar" target/archunitjava-0.1.0-SNAPSHOT.jar
+      - name: Check package contents
+        shell: bash
+        run: |
+          test -s target/archunitjava-0.1.0-SNAPSHOT.jar
+          test -s target/archunitjava-0.1.0-SNAPSHOT-sources.jar
+          test -s target/archunitjava-0.1.0-SNAPSHOT-javadoc.jar
+          jar tf target/archunitjava-0.1.0-SNAPSHOT.jar | grep -F 'dev/archunitjava/cli/ArchUnitJavaCli.class'
+          jar tf target/archunitjava-0.1.0-SNAPSHOT.jar | grep -F 'META-INF/services/org.junit.platform.engine.TestEngine'
+          unzip -p target/archunitjava-0.1.0-SNAPSHOT.jar META-INF/MANIFEST.MF | grep -F 'Automatic-Module-Name: dev.archunitjava'
+      - name: Verify external Maven consumer
+        shell: bash
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests install
+          ./mvnw --batch-mode --no-transfer-progress -f examples/basic/pom.xml test
+      - name: Exercise signing wiring and local-only deployment
+        shell: bash
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate,release-sign -Dgpg.skip=true -DskipTests \
+            "-DaltDeploymentRepository=release-dry-run::file:$RUNNER_TEMP/archunitjava-staging" deploy
+          find "$RUNNER_TEMP/archunitjava-staging" -type f -name 'archunitjava-*.jar' | grep .

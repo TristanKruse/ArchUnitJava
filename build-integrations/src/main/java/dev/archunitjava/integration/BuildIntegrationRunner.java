@@ -65,11 +65,11 @@ public final class BuildIntegrationRunner {
         TreeSet<Path> sorted = new TreeSet<>();
         for (Path output : configured) {
             Path candidate = (output.isAbsolute() ? output : root.resolve(output)).normalize();
-            if (!candidate.startsWith(root)) {
+            Path resolved = candidate.toRealPath();
+            if (!resolved.startsWith(root)) {
                 throw new BuildIntegrationException("Compiled output escapes the approved root");
             }
-            Path resolved = candidate.toRealPath();
-            if (!resolved.startsWith(root) || !Files.isDirectory(resolved, LinkOption.NOFOLLOW_LINKS)) {
+            if (!Files.isDirectory(resolved, LinkOption.NOFOLLOW_LINKS)) {
                 throw new BuildIntegrationException(
                         "Compiled output must be a directory inside the approved root: " + output);
             }

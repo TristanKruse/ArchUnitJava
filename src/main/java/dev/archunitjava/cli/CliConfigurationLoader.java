@@ -189,7 +189,7 @@ public final class CliConfigurationLoader {
             Path root, Path value, String role, boolean mustExist) {
         try {
             Path candidate = (value.isAbsolute() ? value : root.resolve(value)).normalize();
-            if (!candidate.startsWith(root)) {
+            if (!mustExist && !candidate.startsWith(root)) {
                 throw new CliConfigurationException(role + " escapes the approved root");
             }
             Path resolved = mustExist ? candidate.toRealPath() : candidate.toAbsolutePath();

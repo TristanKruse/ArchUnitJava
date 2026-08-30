@@ -51,10 +51,12 @@ jobs:
           cache: maven
       - name: Install the library candidate
         shell: bash
-        run: ./ArchUnitJava/mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests install
+        working-directory: ArchUnitJava
+        run: ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests install
       - name: Verify the external consumer
         shell: bash
-        run: ./ArchUnitJava-TestRepo-RAG/mvnw --batch-mode --no-transfer-progress verify
+        working-directory: ArchUnitJava-TestRepo-RAG
+        run: ./mvnw --batch-mode --no-transfer-progress verify
 
   release-dry-run:
     needs: verify

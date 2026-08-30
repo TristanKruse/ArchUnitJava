@@ -39,7 +39,7 @@ final class BuildIntegrationsTest {
     }
 
     @Test
-    void mavenGradleAndDirectCliChecksAreExactlyEquivalent() {
+    void mavenGradleAndDirectCliChecksAreExactlyEquivalent() throws IOException {
         Invocation direct = direct("check", "--result-format", "json");
         Invocation maven = maven(
                 BuildCommand.CHECK, Optional.of(CliResultFormat.JSON), Optional.empty());
@@ -55,7 +55,8 @@ final class BuildIntegrationsTest {
         assertEquals("verify", maven.result().lifecycle());
         assertEquals(BuildTool.GRADLE, gradle.result().tool());
         assertEquals("check", gradle.result().lifecycle());
-        assertEquals(List.of(apiClasses, internalClasses),
+        assertEquals(List.of(apiClasses.toRealPath(), internalClasses.toRealPath()).stream()
+                        .sorted().toList(),
                 maven.result().compiledOutputs());
         assertEquals(maven.result().compiledOutputs(), gradle.result().compiledOutputs());
         assertTrue(maven.out().contains("\"status\":\"FAILED\""));

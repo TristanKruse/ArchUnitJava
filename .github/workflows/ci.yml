@@ -25,6 +25,37 @@ jobs:
         shell: bash
         run: ./mvnw --batch-mode --no-transfer-progress verify
 
+  external-rag-consumer:
+    name: External RAG consumer on ${{ matrix.os }}
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Check out ArchUnitJava
+        uses: actions/checkout@v7
+        with:
+          path: ArchUnitJava
+      - name: Check out the RAG fixture
+        uses: actions/checkout@v7
+        with:
+          repository: TristanKruse/ArchUnitJava-TestRepo-RAG
+          path: ArchUnitJava-TestRepo-RAG
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Install the library candidate
+        shell: bash
+        run: ./ArchUnitJava/mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests install
+      - name: Verify the external consumer
+        shell: bash
+        run: ./ArchUnitJava-TestRepo-RAG/mvnw --batch-mode --no-transfer-progress verify
+
   release-dry-run:
     needs: verify
     runs-on: ubuntu-latest

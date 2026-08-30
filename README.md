@@ -1,49 +1,298 @@
-# ArchUnitJava
+# ArchUnitJava — Architecture Testing for Java
 
-Static architecture analysis and executable architecture policies for compiled Java code.
+<div align="center" name="top">
 
-ArchUnitJava is the Java member of the ArchUnitEverything family, alongside
-[ArchUnitRuby](https://github.com/LukasNiessen/ArchUnitRuby),
-[ArchUnitPython](https://github.com/LukasNiessen/ArchUnitPython), and
-[ArchUnitTS](https://github.com/LukasNiessen/ArchUnitTS). It imports class directories and JARs
-without loading target classes, builds an immutable dependency model, evaluates architecture rules,
-and renders evidence for tests and CI.
+[![CI](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/ci.yml/badge.svg)](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/ci.yml)
+[![Documentation](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/docs.yml/badge.svg)](https://tristankruse.github.io/ArchUnitJava/)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+[![Java 25](https://img.shields.io/badge/Java-25-E76F00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/25/)
+[![Status: development candidate](https://img.shields.io/badge/status-development%20candidate-ffb45b)](docs/RELEASE.md)
 
-> **Status:** `0.1.0-SNAPSHOT` is a private, reviewable development candidate. The current release
-> decision is **no-go**: persisted baseline ingestion and `package-info.class` handling in some
-> downstream APIs remain blockers. No artifact has been published. See
-> [release readiness](docs/RELEASE.md).
+</div>
 
-## Capabilities
+Enforce architecture boundaries against compiled Java code. ArchUnitJava reads class directories
+and JARs without loading target classes, builds an immutable dependency model, evaluates
+deterministic policies, and produces evidence for JUnit and CI.
 
-- class, member, package, slice, layer, classpath, and JPMS module models;
-- dependencies from declarations, signatures, annotations, exceptions, bytecode calls, fields,
-  constants, method handles, dynamic constants, lambdas, and method references;
-- dependency, naming, location, inheritance, annotation, member-access, cycle, public-interface,
-  reachability, layer, slice, module, and architecture-preset policies;
-- JUnit assertions and a JUnit Platform test engine;
-- a bounded properties-driven CLI plus Maven and Gradle invocation bridges;
-- DOT, Mermaid, D2, JSON, CSV, HTML, SARIF, JUnit XML, and console reports;
-- reviewed baseline values, graph snapshots, source/cohesion/dependency metrics, and deterministic
-  performance snapshots.
+> **Release status:** `0.1.0-SNAPSHOT` is a development candidate. The current decision is
+> **NO-GO** because persisted baseline ingestion and a downstream `package-info.class` defect remain
+> blockers. No artifact has been published. See the evidence-based
+> [release assessment](docs/RELEASE.md).
 
-The pipeline is `EXTRACT -> PROJECT -> ASSERT -> REPORT`. Rules are immutable values and rule
-construction performs no I/O. Empty selections fail by default, and incomplete analysis remains
-distinct from policy violations.
+_Inspired by the established [ArchUnit](https://www.archunit.org/) project, but independently
+implemented and not affiliated with ArchUnit. This is not a drop-in replacement._
 
-## Requirements and compatibility
+[Quickstart](#-five-minute-quickstart) · [Use cases](#-use-cases) ·
+[Capabilities](#-capabilities) · [Reports](#-reports) ·
+[Example repository](#-independent-example-repository) ·
+[Documentation](https://tristankruse.github.io/ArchUnitJava/) ·
+[Limitations](#-current-limitations)
 
-- JDK 25 to build and run the library;
-- Maven 3.9.x, supplied by the checked-in wrapper;
-- analyzed `javac` bytecode from Java 8 through Java 25 (class-file majors 52–69) is covered by the
-  extraction corpus.
+## ⚡ Five-minute quickstart
 
-Later bytecode is unsupported until tested. Older or non-`javac` bytecode may parse, but is not part
-of the release claim. JPMS descriptors are analyzed as data; the library JAR itself currently uses
-the automatic module name `dev.archunitjava`. Full details are in
-[compatibility](docs/COMPATIBILITY.md).
+### 1. Install the development candidate
 
-## Build
+The artifact is not available from a public Maven repository yet. Build and install it locally:
+
+```shell
+git clone https://github.com/TristanKruse/ArchUnitJava.git
+cd ArchUnitJava
+./mvnw -Prelease-candidate install
+```
+
+On Windows, use `mvnw.cmd` instead of `mvnw`.
+
+### 2. Add the test dependency
+
+```xml
+<dependency>
+  <groupId>dev.archunitjava</groupId>
+  <artifactId>archunitjava</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <scope>test</scope>
+</dependency>
+```
+
+Production application code does not need an ArchUnitJava dependency.
+
+### 3. Define an architecture policy
+
+Create `archunitjava.properties` in the analyzed project:
+
+```properties
+schema=archunitjava.cli.v1
+inputs=target/classes
+rules=api-boundary
+emptySelection=fail
+allowIncompleteAnalysis=false
+resultFormat=json
+graphFormat=mermaid
+graphDomain=types
+
+rule.api-boundary.domain=types
+rule.api-boundary.mode=no
+rule.api-boundary.origins=glob:com.example.api.**
+rule.api-boundary.targets=glob:com.example.infrastructure.**
+rule.api-boundary.self=ignore
+rule.api-boundary.external=ignore
+rule.api-boundary.displayName=API must not bypass the application layer
+rule.api-boundary.rationale=Keep concrete adapters behind application ports
+rule.api-boundary.tags=api,boundary
+rule.api-boundary.severity=error
+```
+
+Rules use qualified Java binary names. CLI patterns are either `exact:` or bounded `glob:` values;
+arbitrary regular expressions and executable configuration hooks are intentionally unsupported.
+
+### 4. Run it as a normal JUnit test
+
+```java
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import dev.archunitjava.cli.CliExitCode;
+import dev.archunitjava.cli.CliRunner;
+import java.nio.file.Path;
+import org.junit.jupiter.api.Test;
+
+final class ArchitectureTest {
+    @Test
+    void architecturePoliciesPass() {
+        Path root = Path.of("").toAbsolutePath().normalize();
+        StringBuilder output = new StringBuilder();
+        StringBuilder error = new StringBuilder();
+
+        int exit = new CliRunner().run(new String[] {
+                "check",
+                "--config", root.resolve("archunitjava.properties").toString(),
+                "--root", root.toString(),
+                "--result-format", "json"
+        }, output, error);
+
+        assertEquals(CliExitCode.SUCCESS.code(), exit, error.toString());
+    }
+}
+```
+
+Run it with the rest of the suite:
+
+```shell
+./mvnw test
+```
+
+This same workflow is exercised by the
+[independent RAG consumer](https://github.com/TristanKruse/ArchUnitJava-TestRepo-RAG) on Linux and
+Windows.
+
+## 🧭 How it works
+
+```text
+compiled classes and JARs
+          │
+          ▼
+      EXTRACT        Parse bytecode as untrusted data; never load target classes
+          │
+          ▼
+      PROJECT        Build stable type, package, member, slice, layer, and module views
+          │
+          ▼
+       ASSERT        Evaluate immutable architecture rules with explicit completeness
+          │
+          ▼
+       REPORT        Preserve subjects, dependency kinds, bytecode locations, and diagnostics
+```
+
+Rule construction performs no I/O. Empty selections fail by default. A policy disagreement,
+incomplete analysis, invalid configuration, and internal analysis failure are separate outcomes;
+they are not collapsed into one generic exception or exit code.
+
+## 🐹 Use cases
+
+### Protect dependency directions
+
+Express boundaries such as:
+
+- API code must not depend directly on persistence adapters.
+- Domain code must remain independent of infrastructure frameworks.
+- Application services may depend only on approved domain ports.
+- One JPMS module must not read or export another module.
+
+The properties-driven CLI currently exposes dependency policies over types and packages. The Java
+API additionally contains rules for members, inheritance, annotations, cycles, slices, layers,
+modules, public interfaces, reachability, and exhaustive policies.
+
+### Detect cycles and accidental coupling
+
+The graph model retains concrete origin and target identifiers plus evidence such as the dependency
+kind, owning member, bytecode offset, source file, and line number when available. Cycle and slice
+rules therefore report why a boundary failed instead of returning only a boolean.
+
+### Run architecture policies in JUnit
+
+`ArchitectureAssertions.assertPasses(...)` translates structured results into test-runner failures.
+`ArchitectureTestCases` supports dynamic tests, and the optional JUnit Platform engine discovers
+explicit `@ArchitectureTest` methods without scanning or loading unrelated target classes.
+
+### Review architecture in CI
+
+The CLI has four commands:
+
+| Command | Purpose |
+| --- | --- |
+| `validate-config` | Validate the bounded configuration and approved paths |
+| `explain` | Show the normalized rule definitions without analyzing bytecode |
+| `check` | Analyze inputs and evaluate all configured policies |
+| `graph` | Render a type or package dependency graph |
+
+Stable exit codes distinguish success (`0`), usage errors (`2`), invalid configuration (`3`),
+analysis failure (`4`), and policy violations (`5`).
+
+## 🧰 Capabilities
+
+| Area | Implemented surface |
+| --- | --- |
+| Inputs | Class directories, JARs, classpaths, multi-release JARs, Maven/Gradle project discovery |
+| Java model | Types, records, sealed types, nested types, packages, members, generics, annotations, inheritance, JPMS |
+| Dependencies | Declarations, signatures, annotations, exceptions, calls, fields, constants, method handles, dynamic constants, lambdas, method references |
+| Selectors | Types, packages, members, semantic properties, glob/exact matching, composition |
+| Rules | Dependencies, names, locations, inheritance, annotations, member access, cycles, slices, layers, modules, dead types, public interfaces, presets |
+| Test integration | Framework-neutral assertions, JUnit Jupiter usage, dynamic cases, JUnit Platform engine |
+| Build integration | CLI configuration plus Maven and Gradle invocation bridges |
+| Architecture artifacts | Graph snapshots, PlantUML contracts, reviewed baselines, result exports |
+| Metrics | Source, cohesion, and dependency metrics with deterministic snapshots |
+| Operational controls | Bounded diagnostics, import filters, `.archignore`, cache keys, resource and path limits |
+
+The [generated API reference](https://tristankruse.github.io/ArchUnitJava/api/) lists every public
+package and type. The architecture and ownership rules are described in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## 📊 Reports
+
+Rule results can be rendered as:
+
+- console text;
+- canonical JSON;
+- SARIF for code-scanning systems; or
+- JUnit XML for CI test reporting.
+
+Dependency graphs can be rendered as:
+
+- DOT;
+- Mermaid;
+- D2;
+- CSV;
+- canonical JSON; or
+- self-contained HTML.
+
+For example, switch a configured graph to Mermaid without changing the policy file:
+
+```java
+int exit = new CliRunner().run(new String[] {
+        "graph",
+        "--config", configuration.toString(),
+        "--root", approvedRoot.toString(),
+        "--graph-format", "mermaid"
+}, output, error);
+```
+
+Renderers escape untrusted labels and impose deterministic order and size limits. CSV output is not
+neutralized for spreadsheet formulas; treat it as data and review the
+[threat model](docs/THREAT_MODEL.md) before opening untrusted reports in a spreadsheet program.
+
+## 🧪 Independent example repository
+
+The
+[ArchUnitJava RAG test repository](https://github.com/TristanKruse/ArchUnitJava-TestRepo-RAG)
+is a normal, independently versioned Maven consumer. It models a retrieval-augmented-generation
+application with API, application, domain, infrastructure, and bootstrap packages.
+
+Its five tests prove:
+
+| Contract | Expected outcome |
+| --- | --- |
+| RAG application behavior | Pass |
+| Domain and application isolation | Pass |
+| API directly reaches an infrastructure adapter | Detected as a policy violation |
+| Infrastructure imports an API DTO | Detected as a policy violation |
+| Mermaid graph and strict configuration | Generated and validated |
+
+The two bad dependencies are deliberate fixture data. Tests assert their structured failures, so
+the overall Maven build remains green. Both repositories verify the integration on Ubuntu and
+Windows using GitHub's ordinary read-only public checkout; neither workflow stores an access token.
+
+The smaller [`examples/basic`](examples/basic) consumer remains in this repository as a fast,
+mandatory release-candidate smoke test.
+
+## 🔐 Security model
+
+ArchUnitJava treats target repositories and bytecode as untrusted data:
+
+- target classes are never loaded, initialized, or reflected over;
+- target builds, plugins, and annotation processors are never executed by analysis;
+- configuration cannot name executable factories or commands;
+- approved roots contain configuration, input, cache, diagram, and output paths;
+- archive traversal and decompression have explicit limits;
+- parser and resolution diagnostics are bounded; and
+- HTML, graph, JSON, XML, and SARIF output escapes target-controlled text.
+
+Static bytecode analysis cannot see dependencies introduced only through reflection, native code,
+runtime generation, service lookup, dependency injection configuration, or dynamically assembled
+strings. Regex selectors in the lower-level Java API are trusted policy and have no evaluation
+budget. See [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for the full boundary and residual risks.
+
+## 🧱 Requirements and compatibility
+
+- JDK 25 is required to build and run the current library.
+- Maven 3.9.x is supplied through the checked-in wrapper.
+- `javac` bytecode from Java 8 through Java 25 (class-file majors 52–69) is covered by the extraction
+  corpus.
+- Later bytecode is unsupported until explicitly tested.
+- Older or non-`javac` bytecode may parse, but is outside the release claim.
+- The library JAR exposes the automatic module name `dev.archunitjava`; it is not yet a fully modular
+  JAR.
+
+Read the complete [compatibility contract](docs/COMPATIBILITY.md).
+
+## 🛠️ Build and contribute
 
 Linux and macOS:
 
@@ -57,70 +306,65 @@ Windows:
 .\mvnw.cmd verify
 ```
 
-CI runs the test suite on Windows and Linux with JDK 25. A separate job verifies reproducible JARs,
-source and Javadoc artifacts, package contents, the external Maven example, signing configuration,
-and a local-file-only deployment dry run.
+CI runs the full suite on Ubuntu and Windows with JDK 25. Separate jobs verify:
 
-## Try the development candidate
+- the independent RAG consumer;
+- reproducible primary artifacts;
+- source and Javadoc JARs;
+- package contents and automatic-module metadata;
+- signing configuration and local-only deployment; and
+- the generated GitHub Pages/Javadoc site.
 
-The artifact is not in a public repository. Install it locally first:
+Useful technical guides:
 
-```shell
-./mvnw -Prelease-candidate install
-./mvnw -f examples/basic/pom.xml test
-```
+- [Architecture](docs/ARCHITECTURE.md)
+- [Compatibility](docs/COMPATIBILITY.md)
+- [Migration and staged adoption](docs/MIGRATION.md)
+- [Performance methodology](docs/PERFORMANCE.md)
+- [Release process and readiness](docs/RELEASE.md)
+- [Threat model](docs/THREAT_MODEL.md)
+- [Research and product decisions](docs/RESEARCH.md)
 
-Then a Maven consumer can use:
+## ⚖️ Should I use this or ArchUnit?
 
-```xml
-<dependency>
-  <groupId>dev.archunitjava</groupId>
-  <artifactId>archunitjava</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
-</dependency>
-```
+The original [ArchUnit](https://www.archunit.org/) is mature, widely used, and is generally the
+correct choice for production Java architecture testing today.
 
-The basic example checks compiled application classes through a bounded configuration file:
+ArchUnitJava currently exists to explore a consistent ArchUnitEverything product family, a
+bytecode-as-untrusted-data security boundary, explicit completeness, deterministic evidence, and
+cross-language architecture-policy concepts. Evaluate this candidate when those goals are relevant
+and you are comfortable with an unpublished, unstable API. Do not migrate a production system on
+the assumption of ArchUnit compatibility.
 
-```properties
-schema=archunitjava.cli.v1
-inputs=target/classes
-rules=service-boundary
-rule.service-boundary.domain=types
-rule.service-boundary.mode=only
-rule.service-boundary.origins=glob:com.example.service.**
-rule.service-boundary.targets=glob:com.example.api.**
-rule.service-boundary.external=ignore
-```
+## 📅 Current limitations
 
-Java callers can load the same configuration with `CliConfigurationLoader`, analyze it with
-`CliAnalyzer`, or invoke `CliRunner`. The lower-level importer, selectors, projection plans, rules,
-metrics, snapshots, and renderers are public APIs. The CLI supports `check`, `graph`, `explain`, and
-`validate-config`; run `ArchUnitJavaCli help` for formats and stable exit codes.
+- The release decision is **NO-GO**; no package has been published.
+- Persisted baseline JSON cannot yet be loaded back into the comparison workflow.
+- `package-info.class` still causes a defect in some downstream type-selection APIs.
+- The CLI intentionally exposes only a subset of the lower-level Java rule surface.
+- JDK 25 is currently required at runtime because the importer uses `java.lang.classfile`.
+- Dynamic runtime dependencies are invisible to static bytecode analysis.
+- API and configuration contracts may change before the first release.
 
-## Security model and blind spots
+These limitations are tracked in the [release assessment](docs/RELEASE.md) rather than hidden behind
+a stability claim.
 
-ArchUnitJava parses target bytes and never executes target builds, plugins, annotation processors,
-classes, static initializers, or `invokedynamic` bootstrap methods. Input traversal, parser
-diagnostics, caches, diagrams, and HTML output have explicit containment and resource limits.
+## 🌍 ArchUnitEverything family
 
-Static analysis cannot see dependencies introduced only through reflection, native code, runtime
-generation, or dynamically assembled strings. Regex selectors are trusted policy without an
-evaluation budget, and CSV output is not neutralized for spreadsheet formulas. Read the complete
-[threat model](docs/THREAT_MODEL.md) before analyzing untrusted repositories.
+- [ArchUnitRuby](https://github.com/LukasNiessen/ArchUnitRuby)
+- [ArchUnitPython](https://github.com/LukasNiessen/ArchUnitPython)
+- [ArchUnitTS](https://github.com/LukasNiessen/ArchUnitTS)
 
-## Adoption and reports
+The implementations share a product idea, not source compatibility: architecture decisions should
+be executable, evidence-rich, deterministic, and natural to run in each language's normal test
+workflow.
 
-Start with a narrow configuration, keep incomplete analysis fatal, review structured evidence, then
-expand rules. Baseline domain values support explicit freeze/compare/update operations, but the
-current candidate does not yet read persisted baseline JSON; that blocks a complete migration
-workflow. See [migration](docs/MIGRATION.md), [performance](docs/PERFORMANCE.md), and the
-[architecture](docs/ARCHITECTURE.md).
+## 📄 License
 
-## Relationship to ArchUnit
+ArchUnitJava is licensed under the [Apache License 2.0](LICENSE).
 
-The original [ArchUnit](https://www.archunit.org/) is the established Java architecture-testing
-library. ArchUnitJava is an independent implementation in the ArchUnitEverything family. It neither
-copies ArchUnit source nor claims source, binary, or behavioral drop-in compatibility.
+<div align="right">
 
-Licensed under the [Apache License 2.0](LICENSE).
+[Back to the top](#top)
+
+</div>

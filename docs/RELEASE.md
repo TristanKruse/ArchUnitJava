@@ -85,15 +85,9 @@ These are publisher/account operations and cannot be proven by source code alone
 ./mvnw --batch-mode --no-transfer-progress -f examples/basic/pom.xml test
 ```
 
-To build a Central bundle without uploading it, materialize a non-snapshot version in a disposable
-checkout and run:
-
-```shell
-./mvnw org.codehaus.mojo:versions-maven-plugin:2.19.1:set \
-  -DgenerateBackupPoms=false -DnewVersion=0.1.0
-./mvnw -Prelease-candidate,release-sign,central-release \
-  -Dcentral.skipPublishing=true \
-  -Dgpg.keyname="$MAVEN_GPG_KEY_FINGERPRINT" deploy
-```
-
-The release workflow performs the corresponding credentialed upload with `autoPublish=false`.
+The `release-dry-run` CI job materializes a non-snapshot version, creates a disposable signing key,
+and runs the real Central plugin against an unreachable loopback endpoint. The expected upload
+failure occurs only after bundle creation; CI then verifies the signed primary, source, Javadoc, and
+POM entries in `central-bundle.zip`. This exercises the bundler while making a remote upload
+impossible. The tag-gated release workflow performs the corresponding credentialed upload with
+`autoPublish=false`.

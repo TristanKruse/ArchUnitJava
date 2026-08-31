@@ -83,4 +83,33 @@ final class JavaPatternTest {
         assertThrows(InvalidPatternException.class,
                 () -> JavaPattern.exact(null, "com.example.Api"));
     }
+
+    @Test
+    void safeRegexRejectsBacktrackingConstructsAndBoundsCandidates() {
+        assertThrows(InvalidPatternException.class,
+                () -> JavaPattern.regex(PatternDomain.QUALIFIED_NAME, "(a+)+"));
+        assertThrows(InvalidPatternException.class,
+                () -> JavaPattern.regex(PatternDomain.QUALIFIED_NAME, "a.*b.*c"));
+        assertThrows(InvalidPatternException.class,
+                () -> JavaPattern.regex(PatternDomain.QUALIFIED_NAME, "a?a?a?a?a"));
+        assertThrows(InvalidPatternException.class,
+                () -> JavaPattern.regex(PatternDomain.QUALIFIED_NAME, "a{0,1000}a{0,1000}"));
+        assertThrows(InvalidPatternException.class,
+                () -> JavaPattern.regex(PatternDomain.QUALIFIED_NAME, "(a|aa)+"));
+        assertThrows(InvalidPatternException.class,
+                () -> JavaPattern.regex(PatternDomain.QUALIFIED_NAME, "a{1,9999}"));
+
+        JavaPattern bounded = JavaPattern.regex(PatternDomain.QUALIFIED_NAME, "com\\..+\\.Api");
+        assertThrows(PatternEvaluationException.class,
+                () -> bounded.matches("a".repeat(4097)));
+    }
+
+    @Test
+    void unrestrictedRegexRequiresAnExplicitTrustedApi() {
+        JavaPattern trusted = JavaPattern.trustedRegex(
+                PatternDomain.QUALIFIED_NAME, "(com|org)\\..+\\.Api");
+
+        assertEquals(PatternSyntax.TRUSTED_REGEX, trusted.description().syntax());
+        assertTrue(trusted.matches("org.example.Api"));
+    }
 }

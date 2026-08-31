@@ -62,7 +62,7 @@ public final class SafeAnalysisCache {
     public Path entryPath(AnalysisCacheKey key) {
         Objects.requireNonNull(key, "key");
         Path entry = root.resolve(key.digest() + ".aujc").normalize();
-        if (!entry.getParent().equals(root)) {
+        if (!root.equals(entry.getParent())) {
             throw new IllegalArgumentException("Cache entry escaped the cache root");
         }
         return entry;
@@ -146,17 +146,17 @@ public final class SafeAnalysisCache {
 
     private void writeAtomically(Path entry, AnalysisCacheKey key, byte[] payload) throws IOException {
         Path temporary = Files.createTempFile(root, key.digest() + ".", ".tmp");
-        if (!temporary.getParent().equals(root)) {
+        if (!root.equals(temporary.getParent())) {
             throw new IOException("Temporary cache entry escaped the cache root");
         }
         try {
             try (FileChannel channel = FileChannel.open(
-                    temporary,
-                    StandardOpenOption.WRITE,
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    LinkOption.NOFOLLOW_LINKS)) {
-                DataOutputStream output = new DataOutputStream(
-                        new BufferedOutputStream(Channels.newOutputStream(channel)));
+                            temporary,
+                            StandardOpenOption.WRITE,
+                            StandardOpenOption.TRUNCATE_EXISTING,
+                            LinkOption.NOFOLLOW_LINKS);
+                    DataOutputStream output = new DataOutputStream(
+                            new BufferedOutputStream(Channels.newOutputStream(channel)))) {
                 output.writeInt(MAGIC);
                 output.writeInt(FORMAT_VERSION);
                 output.writeInt(key.schemaVersion());

@@ -45,7 +45,10 @@ final class GraphKernelInvariantTest {
     void JavaKeywordsAreNotAcceptedAsQualifiedNameSegments() {
         assertThrows(IllegalArgumentException.class, () -> PackageId.named("com.class"));
         assertThrows(IllegalArgumentException.class, () -> TypeId.ofBinaryName("com.true"));
+        assertThrows(IllegalArgumentException.class, () -> TypeId.ofBinaryName("package-info.Type"));
         assertThrows(IllegalArgumentException.class, () -> ModuleId.named("com._"));
+        assertEquals("type:com.example.package-info",
+                TypeId.ofBinaryName("com.example.package-info").stableKey());
     }
 
     private record CollidingId(String stableKey, int discriminator) implements StableId {}

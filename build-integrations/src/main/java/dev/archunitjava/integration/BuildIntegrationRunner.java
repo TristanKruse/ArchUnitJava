@@ -91,8 +91,11 @@ public final class BuildIntegrationRunner {
     private static boolean containsClass(Path directory) throws IOException {
         try (var paths = Files.walk(directory)) {
             return paths.limit(100_001)
-                    .anyMatch(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
-                            && path.getFileName().toString().endsWith(".class"));
+                    .anyMatch(path -> {
+                        if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) return false;
+                        Path fileName = path.getFileName();
+                        return fileName != null && fileName.toString().endsWith(".class");
+                    });
         }
     }
 

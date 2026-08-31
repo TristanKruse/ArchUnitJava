@@ -25,11 +25,12 @@ The Java API can freeze current `RuleResult` values into `ReviewedBaseline`, com
 classify new/moved/resolved findings, enforce expiring scoped suppressions, and render canonical JSON
 and a reviewable diff. Baseline updates are proposals; they never mutate files implicitly.
 
-The current candidate has no bounded JSON baseline reader. Consequently a rendered baseline cannot
-yet be loaded by the CLI in a later process, and the complete persisted migration workflow is not
-release-ready. Do not build an ad-hoc object-deserialization or permissive JSON workaround. The
-planned reader must bound bytes, nesting, strings, findings and suppressions; reject duplicate or
-unknown fields and schemas; validate fingerprints; and produce typed diagnostics.
+Persist canonical JSON with `BaselineJsonRenderer`, then load it in a later process with
+`BaselineJsonReader.read(path, BaselineReadLimits.defaults())`. The reader bounds bytes, nesting,
+strings, findings, suppressions, and array values; accepts strict UTF-8 regular files only; and
+rejects duplicate or unknown fields, unsupported schemas, invalid Unicode/dates, and fingerprint
+conflicts. File selection remains caller-owned policy: pass a path from an approved workspace rather
+than discovering baseline paths inside an untrusted target repository.
 
 ## 5. Upgrade deliberately
 

@@ -13,9 +13,13 @@ public abstract sealed class ExecutionError extends RuntimeException
 
     protected ExecutionError(
             String code, String message, Throwable cause, Map<String, String> context) {
-        super(requireText(message, "message"), cause);
-        this.code = requireText(code, "code");
-        this.context = immutableContext(context);
+        this(validate(code, message, context), cause);
+    }
+
+    private ExecutionError(Validated values, Throwable cause) {
+        super(values.message(), cause);
+        this.code = values.code();
+        this.context = values.context();
     }
 
     public final String code() {
@@ -35,10 +39,20 @@ public abstract sealed class ExecutionError extends RuntimeException
         return Collections.unmodifiableMap(sorted);
     }
 
+    private static Validated validate(
+            String code, String message, Map<String, String> context) {
+        return new Validated(
+                requireText(code, "code"),
+                requireText(message, "message"),
+                immutableContext(context));
+    }
+
     private static String requireText(String value, String description) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(description + " must not be blank");
         }
         return value;
     }
+
+    private record Validated(String code, String message, Map<String, String> context) {}
 }

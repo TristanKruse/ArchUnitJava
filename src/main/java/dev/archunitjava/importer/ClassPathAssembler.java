@@ -242,7 +242,9 @@ public final class ClassPathAssembler {
                     || uri.getFragment() != null
                     || uri.getPath() == null
                     || uri.getPath().startsWith("/")) return null;
-            Path resolved = jar.getParent().resolve(uri.getPath()).toAbsolutePath().normalize();
+            Path parent = jar.getParent();
+            if (parent == null) return null;
+            Path resolved = parent.resolve(uri.getPath()).toAbsolutePath().normalize();
             return resolved.startsWith(containmentRoot) ? resolved : null;
         } catch (URISyntaxException | IllegalArgumentException failure) {
             return null;
@@ -254,7 +256,9 @@ public final class ClassPathAssembler {
         if (input.kind() != ClassFileInput.Kind.AUTO) return null;
         return input.path()
                 .filter(path -> {
-                    String name = path.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
+                    Path fileName = path.getFileName();
+                    if (fileName == null) return false;
+                    String name = fileName.toString().toLowerCase(java.util.Locale.ROOT);
                     return name.endsWith(".jar") || name.endsWith(".zip");
                 })
                 .orElse(null);

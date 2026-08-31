@@ -6,7 +6,7 @@
 [![Documentation](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/docs.yml/badge.svg)](https://tristankruse.github.io/ArchUnitJava/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Java 25](https://img.shields.io/badge/Java-25-E76F00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/25/)
-[![Status: development candidate](https://img.shields.io/badge/status-development%20candidate-ffb45b)](docs/RELEASE.md)
+[![Status: staging ready](https://img.shields.io/badge/status-staging%20ready-2da44e)](docs/RELEASE.md)
 
 </div>
 
@@ -14,9 +14,9 @@ Enforce architecture boundaries against compiled Java code. ArchUnitJava reads c
 and JARs without loading target classes, builds an immutable dependency model, evaluates
 deterministic policies, and produces evidence for JUnit and CI.
 
-> **Release status:** `0.1.0-SNAPSHOT` is a development candidate. The current decision is
-> **NO-GO** because persisted baseline ingestion and a downstream `package-info.class` defect remain
-> blockers. No artifact has been published. See the evidence-based
+> **Release status:** the reviewed `0.1.0-SNAPSHOT` build is **GO for user-managed Maven Central
+> staging**. Publishing remains a separate manual decision, and no artifact has been published. See
+> the evidence and external publisher prerequisites in the
 > [release assessment](docs/RELEASE.md).
 
 _Inspired by the established [ArchUnit](https://www.archunit.org/) project, but independently
@@ -30,7 +30,7 @@ implemented and not affiliated with ArchUnit. This is not a drop-in replacement.
 
 ## ⚡ Five-minute quickstart
 
-### 1. Install the development candidate
+### 1. Install the reviewed candidate
 
 The artifact is not available from a public Maven repository yet. Build and install it locally:
 
@@ -46,7 +46,7 @@ On Windows, use `mvnw.cmd` instead of `mvnw`.
 
 ```xml
 <dependency>
-  <groupId>dev.archunitjava</groupId>
+  <groupId>io.github.tristankruse</groupId>
   <artifactId>archunitjava</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <scope>test</scope>
@@ -234,9 +234,10 @@ int exit = new CliRunner().run(new String[] {
 }, output, error);
 ```
 
-Renderers escape untrusted labels and impose deterministic order and size limits. CSV output is not
-neutralized for spreadsheet formulas; treat it as data and review the
-[threat model](docs/THREAT_MODEL.md) before opening untrusted reports in a spreadsheet program.
+Renderers escape untrusted labels and impose deterministic order and size limits. CSV is
+spreadsheet-safe by default. The explicitly named `renderMachineReadable` Java API preserves values
+without formula neutralization and must be treated as data rather than opened directly in a
+spreadsheet. See the [threat model](docs/THREAT_MODEL.md).
 
 ## 🧪 Independent example repository
 
@@ -276,8 +277,9 @@ ArchUnitJava treats target repositories and bytecode as untrusted data:
 
 Static bytecode analysis cannot see dependencies introduced only through reflection, native code,
 runtime generation, service lookup, dependency injection configuration, or dynamically assembled
-strings. Regex selectors in the lower-level Java API are trusted policy and have no evaluation
-budget. See [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for the full boundary and residual risks.
+strings. The lower-level `JavaPattern.regex` API accepts a bounded safe subset; unrestricted JDK
+regular expressions require the explicitly named `trustedRegex` method and trusted in-process
+policy. See [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for the full boundary and residual risks.
 
 ## 🧱 Requirements and compatibility
 
@@ -312,7 +314,9 @@ CI runs the full suite on Ubuntu and Windows with JDK 25. Separate jobs verify:
 - reproducible primary artifacts;
 - source and Javadoc JARs;
 - package contents and automatic-module metadata;
-- signing configuration and local-only deployment; and
+- a reviewed SpotBugs baseline that rejects new finding categories and mutable representation
+  exposure;
+- Central bundle construction, signing configuration, and local-only deployment; and
 - the generated GitHub Pages/Javadoc site.
 
 Useful technical guides:
@@ -330,21 +334,20 @@ Useful technical guides:
 The original [ArchUnit](https://www.archunit.org/) is mature, widely used, and is generally the
 correct choice for production Java architecture testing today.
 
-ArchUnitJava currently exists to explore a consistent ArchUnitEverything product family, a
+ArchUnitJava exists to explore a consistent ArchUnitEverything product family, a
 bytecode-as-untrusted-data security boundary, explicit completeness, deterministic evidence, and
 cross-language architecture-policy concepts. Evaluate this candidate when those goals are relevant
-and you are comfortable with an unpublished, unstable API. Do not migrate a production system on
+and you are comfortable with an unpublished, provisional pre-1.0 API. Do not migrate a production system on
 the assumption of ArchUnit compatibility.
 
 ## 📅 Current limitations
 
-- The release decision is **NO-GO**; no package has been published.
-- Persisted baseline JSON cannot yet be loaded back into the comparison workflow.
-- `package-info.class` still causes a defect in some downstream type-selection APIs.
+- The code is ready for user-managed staging, but no package has been published.
 - The CLI intentionally exposes only a subset of the lower-level Java rule surface.
 - JDK 25 is currently required at runtime because the importer uses `java.lang.classfile`.
 - Dynamic runtime dependencies are invisible to static bytecode analysis.
-- API and configuration contracts may change before the first release.
+- API contracts remain provisional before 1.0 and are not compatible with ArchUnit's API.
+- Performance data is regression evidence, not an absolute scalability claim.
 
 These limitations are tracked in the [release assessment](docs/RELEASE.md) rather than hidden behind
 a stability claim.

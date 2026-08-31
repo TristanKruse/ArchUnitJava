@@ -64,6 +64,21 @@ class DataAndHtmlRenderersTest {
     }
 
     @Test
+    void csvIsSpreadsheetSafeByDefaultAndOffersExplicitLosslessInterchange() {
+        GraphSnapshot snapshot = snapshotWithFormulaLabel();
+
+        List<List<String>> safe = parseCsv(CsvGraphRenderer.render(snapshot));
+        List<List<String>> machine = parseCsv(CsvGraphRenderer.renderMachineReadable(snapshot));
+
+        assertEquals("'=2+2", safe.stream()
+                .filter(row -> row.get(1).equals("node"))
+                .findFirst().orElseThrow().get(5));
+        assertEquals("=2+2", machine.stream()
+                .filter(row -> row.get(1).equals("node"))
+                .findFirst().orElseThrow().get(5));
+    }
+
+    @Test
     void d2UsesGeneratedIdentifiersAndCannotReceivePropertiesFromNames() {
         String d2 = D2GraphRenderer.render(snapshot(false));
 
@@ -157,6 +172,12 @@ class DataAndHtmlRenderersTest {
                 A, B, DependencyKind.METHOD_CALL, item));
         graph.addDependency(B, A, DependencyKind.FIELD_TYPE, first);
         return GraphSnapshotQuery.layers(graph.build(), mappings).snapshot();
+    }
+
+    private static GraphSnapshot snapshotWithFormulaLabel() {
+        TypeId formula = TypeId.ofBinaryName("app.Formula");
+        DependencyGraph graph = DependencyGraph.builder().addNode(formula).build();
+        return GraphSnapshotQuery.layers(graph, Map.of(formula, LayerId.named("=2+2"))).snapshot();
     }
 
     private static List<byte[]> renderedBytes(GraphSnapshot snapshot) {

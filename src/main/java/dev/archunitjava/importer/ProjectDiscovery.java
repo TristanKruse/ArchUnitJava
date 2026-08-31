@@ -133,10 +133,10 @@ public final class ProjectDiscovery {
         }
         if (hasMaven) return mavenCandidate(root, pom, diagnostics);
         long settingsVariants = gradleFiles.stream()
-                .filter(path -> path.getFileName().toString().startsWith("settings.gradle"))
+                .filter(path -> fileNameStartsWith(path, "settings.gradle"))
                 .count();
         long buildVariants = gradleFiles.stream()
-                .filter(path -> path.getFileName().toString().startsWith("build.gradle"))
+                .filter(path -> fileNameStartsWith(path, "build.gradle"))
                 .count();
         if (settingsVariants > 1 || buildVariants > 1) {
             diagnostics.add(diagnostic(DiscoveryDiagnosticCode.AMBIGUOUS_BUILD_METADATA, root,
@@ -179,7 +179,7 @@ public final class ProjectDiscovery {
             Path root, List<Path> metadataFiles, List<DiscoveryDiagnostic> diagnostics) {
         Set<Path> modules = new HashSet<>();
         List<Path> settings = metadataFiles.stream()
-                .filter(path -> path.getFileName().toString().startsWith("settings.gradle"))
+                .filter(path -> fileNameStartsWith(path, "settings.gradle"))
                 .toList();
         boolean usable = true;
         for (Path path : settings) {
@@ -210,7 +210,7 @@ public final class ProjectDiscovery {
         }
         boolean conventionalOutputs = true;
         for (Path path : metadataFiles) {
-            if (!path.getFileName().toString().startsWith("build.gradle")) continue;
+            if (!fileNameStartsWith(path, "build.gradle")) continue;
             Optional<byte[]> bytes = readMetadata(path, diagnostics);
             if (bytes.isEmpty()) {
                 conventionalOutputs = false;
@@ -345,6 +345,11 @@ public final class ProjectDiscovery {
         factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
         factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
         return factory;
+    }
+
+    private static boolean fileNameStartsWith(Path path, String prefix) {
+        Path fileName = path.getFileName();
+        return fileName != null && fileName.toString().startsWith(prefix);
     }
 
     private static String stripGradleComments(String value) {

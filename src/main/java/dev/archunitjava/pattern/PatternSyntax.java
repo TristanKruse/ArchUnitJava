@@ -4,5 +4,6 @@ package dev.archunitjava.pattern;
 public enum PatternSyntax {
     EXACT,
     GLOB,
-    REGEX
+    REGEX,
+    TRUSTED_REGEX
 }

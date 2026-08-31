@@ -125,9 +125,8 @@ final class PerformanceBaselineTest {
         peak = Math.max(peak, usedHeap());
 
         started = System.nanoTime();
-        TypeModelResult ruleModel = withoutPackageInfo(model);
         DependencyRules.types(
-                ruleModel, graph, TypeSelector.all(), TypeSelector.all(),
+                model, graph, TypeSelector.all(), TypeSelector.all(),
                 DependencyRuleSpec.onlyDependencies()
                         .withExternalDependencies(ExternalDependencyPolicy.IGNORE))
                 .check();
@@ -137,7 +136,7 @@ final class PerformanceBaselineTest {
         var packages = ProjectionPlan.packages().apply(graph);
         new DependencyMetricAnalyzer().analyze(
                 packages, ComponentCompositions.packages(
-                        ruleModel.types(), AbstractnessScope.ALL_TYPES));
+                        model.types(), AbstractnessScope.ALL_TYPES));
         long metricNs = System.nanoTime() - started;
 
         started = System.nanoTime();
@@ -155,11 +154,8 @@ final class PerformanceBaselineTest {
 
     private static DependencyGraph graph(TypeModelResult model) {
         DependencyGraph.Builder graph = DependencyGraph.builder();
-        model.types().stream().filter(type -> !packageInfo(type.binaryName()))
-                .forEach(type -> graph.addNode(TypeId.ofBinaryName(type.binaryName())));
+        model.types().forEach(type -> graph.addNode(TypeId.ofBinaryName(type.binaryName())));
         new DeclarationDependencyExtractor().extract(model.types()).dependencies().stream()
-                .filter(dependency -> !packageInfo(dependency.origin().binaryName()))
-                .filter(dependency -> !packageInfo(dependency.target().binaryName()))
                 .forEach(dependency -> {
             TypeId origin = TypeId.ofBinaryName(dependency.origin().binaryName());
             TypeId target = TypeId.ofBinaryName(dependency.target().binaryName());
@@ -168,8 +164,7 @@ final class PerformanceBaselineTest {
                     origin, target, DependencyKind.TYPE_REFERENCE,
                     DependencyEvidence.at(source.location().resource().locationId())));
         });
-        model.types().stream().filter(type -> !packageInfo(type.binaryName()))
-                .forEach(type -> type.declaredMembers().forEach(member ->
+        model.types().forEach(type -> type.declaredMembers().forEach(member ->
                 member.codeAccesses().forEach(access -> targetType(access.target().ownerType())
                         .ifPresent(targetName -> {
                             TypeId origin = TypeId.ofBinaryName(type.binaryName());
@@ -181,16 +176,6 @@ final class PerformanceBaselineTest {
                                             origin, signature.name(), signature.descriptor())));
                         }))));
         return graph.build();
-    }
-
-    private static boolean packageInfo(String binaryName) {
-        return binaryName.equals("package-info") || binaryName.endsWith(".package-info");
-    }
-
-    private static TypeModelResult withoutPackageInfo(TypeModelResult model) {
-        return new TypeModelResult(
-                model.types().stream().filter(type -> !packageInfo(type.binaryName())).toList(),
-                model.modules(), model.classFileDiagnostics(), model.diagnostics());
     }
 
     private static Optional<String> targetType(JvmType type) {

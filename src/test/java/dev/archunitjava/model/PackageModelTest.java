@@ -1,12 +1,21 @@
 package dev.archunitjava.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.archunitjava.importer.ClassFileInput;
 import dev.archunitjava.importer.ClassFileInputEnumerator;
 import dev.archunitjava.importer.ClassFileReader;
+import dev.archunitjava.graph.DependencyGraph;
+import dev.archunitjava.graph.TypeId;
+import dev.archunitjava.metrics.AbstractnessScope;
+import dev.archunitjava.metrics.ComponentCompositions;
+import dev.archunitjava.rules.DependencyRuleSpec;
+import dev.archunitjava.rules.DependencyRules;
+import dev.archunitjava.rules.ExternalDependencyPolicy;
+import dev.archunitjava.selector.TypeSelector;
 import java.io.IOException;
 import java.lang.classfile.Annotation;
 import java.lang.classfile.ClassFile;
@@ -60,6 +69,27 @@ class PackageModelTest {
     }
 
     @Test
+    void packageInfoFlowsThroughTypeRulesAndComponentComposition() throws IOException {
+        Path first = temporaryDirectory.resolve("first");
+        write(first, "sample/package-info.class", classBytes("sample.package-info"));
+        write(first, "sample/Service.class", classBytes("sample.Service"));
+        TypeModelResult model = importModel(List.of(first));
+        DependencyGraph.Builder graph = DependencyGraph.builder();
+        model.types().forEach(type -> graph.addNode(TypeId.ofBinaryName(type.binaryName())));
+
+        assertDoesNotThrow(() -> DependencyRules.types(
+                model,
+                graph.build(),
+                TypeSelector.all(),
+                TypeSelector.all(),
+                DependencyRuleSpec.onlyDependencies()
+                        .withExternalDependencies(ExternalDependencyPolicy.IGNORE))
+                .check());
+        assertEquals(1, ComponentCompositions.packages(
+                model.types(), AbstractnessScope.ALL_TYPES).getFirst().typeCount());
+    }
+
+    @Test
     void splitPackagesRetainEveryInputOriginInPrecedenceOrder() throws IOException {
         Path first = temporaryDirectory.resolve("first");
         Path second = temporaryDirectory.resolve("second");
@@ -95,11 +125,13 @@ class PackageModelTest {
     }
 
     private JavaPackageIndex importPackages(List<Path> roots) {
+        return JavaPackageIndex.of(importModel(roots).types());
+    }
+
+    private TypeModelResult importModel(List<Path> roots) {
         var inputs = roots.stream().map(ClassFileInput::directory).toList();
         var resources = new ClassFileInputEnumerator().enumerate(inputs).resources();
-        List<JavaType> types = new TypeModelBuilder()
-                .build(new ClassFileReader().readAll(resources)).types();
-        return JavaPackageIndex.of(types);
+        return new TypeModelBuilder().build(new ClassFileReader().readAll(resources));
     }
 
     private static byte[] classBytes(String binaryName) {

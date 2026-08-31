@@ -41,10 +41,12 @@ seam.
 
 HTML output escapes target strings, applies explicit size limits, and embeds a restrictive content
 security policy. JSON, Mermaid, D2, and DOT quote or escape their data domains and use generated graph
-identifiers. PlantUML input is a bounded allowlisted component grammar; includes, directives, macros,
-and general PlantUML execution are rejected. Baseline domain values reject unknown schemas,
-fingerprint conflicts, and duplicate suppression IDs. There is currently no JSON baseline reader, so
-untrusted baseline text has no parsing or activation path.
+identifiers. Spreadsheet-safe CSV neutralizes formula prefixes by default; the explicitly named
+machine-readable mode preserves values and must not be opened directly in spreadsheet software.
+PlantUML input is a bounded allowlisted component grammar; includes, directives, macros, and general
+PlantUML execution are rejected. Baseline JSON is parsed by a schema-specific bounded reader that
+rejects malformed UTF-8, unknown or duplicate fields, excessive structure, invalid Unicode and
+dates, unsupported schemas, and fingerprint conflicts before constructing domain values.
 
 ## Residual risk
 
@@ -57,17 +59,12 @@ unsupported or malformed constructs but cannot infer dependencies created only t
 native code, runtime code generation, service configuration not represented in analyzed metadata,
 or dynamically assembled strings.
 
-The following gaps remain release-significant:
+The following residual risks are explicit parts of the API contract:
 
-- Java regular-expression selectors are trusted policy and use the JDK regex engine without an
-  evaluation budget. Untrusted regex configuration could consume excessive CPU.
-- CSV is syntactically escaped but does not neutralize spreadsheet formulas. Consumers must import it
-  as data rather than opening untrusted reports directly in a spreadsheet application.
-- Baselines can be rendered but not read back. A future bounded JSON reader must reject duplicate
-  keys, excessive nesting/size/counts, unknown fields and schemas, invalid Unicode, and conflicting
-  fingerprints before baseline migration can be advertised.
-- `package-info.class` imports successfully, but some type-rule and component-metric entry points
-  currently reject its binary name when constructing graph identities.
+- `JavaPattern.regex` accepts a conservative bounded subset. `JavaPattern.trustedRegex` deliberately
+  exposes the unrestricted JDK engine and must receive trusted in-process policy only.
+- `CsvGraphRenderer.render` is spreadsheet-safe. `renderMachineReadable` is lossless data interchange
+  and callers must prevent direct spreadsheet opening of target-controlled output.
 - Static analysis cannot observe behavior introduced only at runtime, and resource limits reduce but
   cannot eliminate denial-of-service risk from expensive valid inputs, storage latency, or TOCTOU
   replacement inside caller-approved roots.

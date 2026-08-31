@@ -23,7 +23,16 @@ interface ClassFileParserBackend {
             java.util.List<String> permittedSubclassBinaryNames,
             ParsedNestingMetadata nestingMetadata,
             ParsedConstantPoolEvidence constantPoolEvidence,
-            java.util.Optional<ParsedModuleDescriptor> module) {}
+            java.util.Optional<ParsedModuleDescriptor> module) {
+        public ParsedClassHeader {
+            interfaceBinaryNames = java.util.List.copyOf(interfaceBinaryNames);
+            declaredMembers = java.util.List.copyOf(declaredMembers);
+            annotations = java.util.List.copyOf(annotations);
+            annotationDefaults = java.util.List.copyOf(annotationDefaults);
+            recordComponents = java.util.List.copyOf(recordComponents);
+            permittedSubclassBinaryNames = java.util.List.copyOf(permittedSubclassBinaryNames);
+        }
+    }
 
     @FunctionalInterface
     interface TraversalObserver {

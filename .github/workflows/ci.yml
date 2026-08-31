@@ -15,7 +15,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -62,7 +62,7 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -71,13 +71,76 @@ jobs:
       - name: Check release documentation
         shell: bash
         run: |
-          for file in README.md LICENSE CHANGELOG.md docs/COMPATIBILITY.md docs/MIGRATION.md docs/RELEASE.md docs/THREAT_MODEL.md; do
+          for file in README.md LICENSE CHANGELOG.md CONTRIBUTING.md SECURITY.md docs/COMPATIBILITY.md docs/MIGRATION.md docs/RELEASE.md docs/THREAT_MODEL.md; do
             test -s "$file"
           done
-          grep -F 'Decision: NO-GO' docs/RELEASE.md
+          grep -F 'Decision: GO FOR USER-MANAGED STAGING' docs/RELEASE.md
       - name: Build release candidate
         shell: bash
         run: ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests verify
+      - name: Reject unexpected SpotBugs findings
+        shell: bash
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress \
+            com.github.spotbugs:spotbugs-maven-plugin:4.10.3.0:spotbugs -DskipTests
+          python3 - <<'PY'
+          import hashlib
+          import xml.etree.ElementTree as ET
+
+          report = ET.parse("target/spotbugsXml.xml").getroot()
+          errors = report.find("Errors")
+          if errors is None or errors.get("errors") != "0" or errors.get("missingClasses") != "0":
+              raise SystemExit("SpotBugs analysis errors or missing classes were reported")
+
+          allowed = {"EI_EXPOSE_REP", "EQ_COMPARETO_USE_OBJECT_EQUALS"}
+          findings = report.findall("BugInstance")
+          finding_keys = []
+          for item in findings:
+              class_element = item.find("Class")
+              field = item.find("Field")
+              finding_keys.append("|".join((
+                  item.get("type", ""),
+                  class_element.get("classname", "") if class_element is not None else "",
+                  field.get("name", "") if field is not None else "",
+                  field.get("signature", "") if field is not None else "",
+              )))
+          fingerprint = hashlib.sha256(
+              "\n".join(sorted(finding_keys)).encode("utf-8")
+          ).hexdigest()
+          expected_fingerprint = "fc7970533be9e41f9961b7303fa77d0170a4f441c31ea6e85057effcdfc2f555"
+          if len(findings) != 161 or fingerprint != expected_fingerprint:
+              raise SystemExit(
+                  f"Reviewed SpotBugs baseline changed: {len(findings)} notices, {fingerprint}"
+              )
+
+          unexpected = sorted({item.get("type") for item in findings} - allowed)
+          if unexpected:
+              raise SystemExit("Unexpected SpotBugs categories: " + ", ".join(unexpected))
+
+          collection_signatures = {
+              "Ljava/util/List;", "Ljava/util/Map;", "Ljava/util/Set;"
+          }
+          for item in findings:
+              if item.get("type") == "EI_EXPOSE_REP":
+                  field = item.find("Field")
+                  if field is None or field.get("signature") not in collection_signatures:
+                      raise SystemExit("Unexpected exposed-representation field type")
+
+          expected_comparables = {
+              "dev.archunitjava.importer.ClassFileResource",
+              "dev.archunitjava.model.JavaMember",
+              "dev.archunitjava.model.JavaType",
+          }
+          comparables = {
+              item.find("Class").get("classname")
+              for item in findings
+              if item.get("type") == "EQ_COMPARETO_USE_OBJECT_EQUALS"
+          }
+          if comparables != expected_comparables:
+              raise SystemExit("Natural-order exception set changed: " + repr(comparables))
+
+          print(f"Reviewed SpotBugs baseline accepted: {len(findings)} notices")
+          PY
       - name: Verify reproducible primary artifact
         shell: bash
         run: |
@@ -104,3 +167,26 @@ jobs:
           ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate,release-sign -Dgpg.skip=true -DskipTests \
             "-DaltDeploymentRepository=release-dry-run::file:$RUNNER_TEMP/archunitjava-staging" deploy
           find "$RUNNER_TEMP/archunitjava-staging" -type f -name 'archunitjava-*.jar' | grep .
+      - name: Build a signed Central bundle without uploading it
+        shell: bash
+        run: |
+          gpg --batch --pinentry-mode loopback --passphrase '' \
+            --quick-generate-key 'ArchUnitJava CI <ci@archunitjava.invalid>' rsa2048 sign 1d
+          export MAVEN_GPG_KEY_FINGERPRINT
+          MAVEN_GPG_KEY_FINGERPRINT="$(gpg --batch --with-colons --list-secret-keys \
+            | awk -F: '$1 == "fpr" { print $10; exit }')"
+          test -n "$MAVEN_GPG_KEY_FINGERPRINT"
+          ./mvnw --batch-mode --no-transfer-progress \
+            org.codehaus.mojo:versions-maven-plugin:2.19.1:set \
+            -DgenerateBackupPoms=false -DnewVersion=0.1.0
+          ./mvnw --batch-mode --no-transfer-progress \
+            -Prelease-candidate,release-sign,central-release \
+            -Dcentral.skipPublishing=true -Dgpg.keyname="$MAVEN_GPG_KEY_FINGERPRINT" \
+            -DskipTests deploy
+          bundle=target/central-publishing/central-bundle.zip
+          test -s "$bundle"
+          unzip -l "$bundle" | grep -F 'archunitjava-0.1.0.jar'
+          unzip -l "$bundle" | grep -F 'archunitjava-0.1.0-sources.jar'
+          unzip -l "$bundle" | grep -F 'archunitjava-0.1.0-javadoc.jar'
+          unzip -l "$bundle" | grep -F 'archunitjava-0.1.0.pom'
+          unzip -l "$bundle" | grep -F 'archunitjava-0.1.0.jar.asc'

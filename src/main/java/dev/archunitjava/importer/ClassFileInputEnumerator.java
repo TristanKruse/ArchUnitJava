@@ -134,7 +134,7 @@ public final class ClassFileInputEnumerator {
                 continue;
             }
             if (!Files.isRegularFile(candidate, LinkOption.NOFOLLOW_LINKS)
-                    || !candidate.getFileName().toString().endsWith(".class")) continue;
+                    || !fileNameEndsWith(candidate, ".class")) continue;
             if (++count > options.maximumResourcesPerInput()) {
                 diagnostics.add(limit(root.toString(), "class-resources", options.maximumResourcesPerInput()));
                 break;
@@ -277,7 +277,7 @@ public final class ClassFileInputEnumerator {
                 }
                 classes = candidates.stream()
                         .filter(Files::isRegularFile)
-                        .filter(path -> path.getFileName().toString().endsWith(".class"))
+                        .filter(path -> fileNameEndsWith(path, ".class"))
                         .sorted()
                         .toList();
             }
@@ -436,8 +436,15 @@ public final class ClassFileInputEnumerator {
     }
 
     private static boolean isJar(Path path) {
-        String name = path.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
+        Path fileName = path.getFileName();
+        if (fileName == null) return false;
+        String name = fileName.toString().toLowerCase(java.util.Locale.ROOT);
         return name.endsWith(".jar") || name.endsWith(".zip");
+    }
+
+    private static boolean fileNameEndsWith(Path path, String suffix) {
+        Path fileName = path.getFileName();
+        return fileName != null && fileName.toString().endsWith(suffix);
     }
 
     private static String normalizeEntry(String value) {

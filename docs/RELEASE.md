@@ -1,48 +1,80 @@
 # Release readiness
 
-**Decision: NO-GO** for public `0.1.0` publication.
+**Decision: GO FOR USER-MANAGED STAGING** of public `0.1.0`; publication remains a separate manual
+decision.
 
-The repository can produce a reviewable `dev.archunitjava:archunitjava:0.1.0-SNAPSHOT` candidate,
-but packaging completeness is not the same as product readiness. No credentials or remote repository
-are configured and nothing is published by the dry run.
+The repository can produce and locally validate `io.github.tristankruse:archunitjava:0.1.0`. The
+tag-gated release workflow uploads a signed bundle to the Maven Central Portal with automatic
+publishing disabled. No artifact has been published, and a validated deployment must still be
+reviewed and explicitly released by a human because Maven Central artifacts are immutable.
 
 ## Evidence available
 
-- The current local audit runs 339 tests with zero failures or errors; two platform/opt-in cases are
-  intentionally skipped in the ordinary suite.
-- Windows and Linux CI run the full JDK 25 Maven verification.
+- The local audit runs 347 ordinary tests with zero failures or errors; two platform/opt-in cases
+  are intentionally skipped in that suite.
+- Windows and Linux CI run the full JDK 25 Maven verification and an independent RAG consumer.
 - The primary JAR has a fixed output timestamp and is rebuilt byte-for-byte in CI.
-- The release-candidate profile attaches source and Javadoc JARs.
-- Package checks verify the CLI entry point, JUnit Platform service entry, and automatic module name.
-- `examples/basic` is compiled and tested as a separate Maven consumer after local installation.
-- A release-sign profile wires Maven GPG; CI activates it with signing skipped because credentials are
-  intentionally absent.
-- Maven deploy is exercised only against a temporary local `file:` repository supplied explicitly by
-  `altDeploymentRepository`.
-- Performance inputs are version/digest pinned and semantic snapshots guard optimization work.
+- Source and Javadoc JARs are attached. Javadoc doclint enforces every category except missing
+  record-component tags; Central requires real Javadoc content but does not require tag-complete
+  prose.
+- Package checks verify the CLI entry point, JUnit Platform service entry, and automatic module
+  name.
+- SpotBugs reports no analysis errors, missing classes, mutable-input exposure, null-path, resource,
+  or constructor-safety findings. CI rejects every category outside the reviewed immutable-collection
+  accessor and intentional natural-order baseline.
+- `examples/basic` and the separate RAG repository compile and test against a locally installed
+  candidate.
+- The official Central Portal Maven plugin creates a user-managed bundle. GPG uses best-practices
+  mode, and release CI obtains credentials and passphrases only through environment-backed GitHub
+  secrets.
+- Coordinates use the GitHub-verifiable `io.github.tristankruse` namespace and include license,
+  developer, SCM, project, and dependency metadata required by Central.
+- Performance inputs are version/digest pinned and semantic snapshots cover real open-source
+  bytecode, including `package-info.class` through rules and metrics.
 - The adversarial corpus verifies target-code non-execution, containment, resource limits, opaque
-  caches, output escaping, and baseline value invariants.
+  caches, output escaping, baseline ingestion, and value invariants.
 
-## Blocking findings
+## Findings resolved after the first no-go review
 
-1. Persisted baseline JSON has a renderer but no bounded reader, so the documented migration cycle
-   cannot span processes or CI runs.
-2. Real open-source bytecode exposed that `package-info.class` imports but is rejected by some
-   type-rule and component-composition graph-identity paths.
-3. Regex selectors have no evaluation budget. They must remain trusted configuration or gain a safe
-   subset/time budget before analysis of fully untrusted repositories is claimed.
-4. CSV quoting does not neutralize spreadsheet formulas; either harden the format or prominently
-   separate machine interchange from spreadsheet-safe export.
-5. The current pinned performance corpus is representative but modest (383 combined classes). A
-   larger application and modular multi-JAR corpus is needed before making scalability claims.
-6. Real signing and a remote staging repository have not been exercised because the task explicitly
-   excludes publishing credentials.
-7. Javadocs are generated successfully, but the current run reports missing parameter documentation
-   across public record-based APIs. The API-documentation warning backlog should be cleared before a
-   polished public release.
+1. Canonical baseline JSON now has a bounded strict reader for UTF-8 text, bytes, and regular files.
+   It rejects unknown and duplicate fields, unknown schemas, invalid Unicode and dates, excessive
+   bytes/depth/counts/strings, malformed fingerprints, and non-regular paths.
+2. `package-info.class` has a valid stable type identity and now flows through the real-bytecode
+   type-rule and component-metric pipeline without benchmark exclusions.
+3. `JavaPattern.regex` accepts a conservative bounded subset. Unrestricted JDK regex is available
+   only through the explicitly named `trustedRegex` API; CLI configuration still permits exact and
+   bounded glob patterns only.
+4. CSV is spreadsheet-safe by default. Lossless, non-neutralized interchange requires the explicit
+   `renderMachineReadable` API and is documented as unsuitable for direct spreadsheet opening.
+5. Maven metadata now uses a verifiable namespace and the build contains an official Central Portal
+   staging configuration plus a tag- and confirmation-gated workflow.
+6. Javadoc generation now fails on actionable doclint warnings while treating missing
+   record-component tags as a documentation backlog rather than a semantic release failure.
 
-The no-go decision can change only when the relevant fixes, regression tests, threat-model updates,
-and a fresh review are committed. It must not be changed merely because the package command passes.
+## External prerequisites before the first staging run
+
+These are publisher/account operations and cannot be proven by source code alone:
+
+1. Sign in to the Central Portal through the `TristanKruse` GitHub identity and confirm that the
+   automatically provisioned `io.github.tristankruse` namespace is verified.
+2. Create a dedicated signing key, publish its public key, and configure the protected
+   `maven-central` GitHub environment with `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`,
+   `MAVEN_GPG_PRIVATE_KEY`, `MAVEN_GPG_PASSPHRASE`, and `MAVEN_GPG_KEY_FINGERPRINT` secrets.
+3. Review the exact commit, create signed tag `v0.1.0`, and dispatch `release.yml` from that tag with
+   version `0.1.0` and confirmation `stage`.
+4. Review Central's validation result, downloaded signatures/checksums, generated POM, and consumer
+   smoke test. Publishing the validated deployment requires a separate human action in Central.
+
+## Known limitations that remain part of the 0.1.0 contract
+
+- JDK 25 is required at runtime. Java 8–25 describes analyzed `javac` bytecode, not the runtime
+  requirement.
+- The lower-level public API is provisional before 1.0 and is not compatible with ArchUnit's API.
+- The pinned performance corpus is modest. The project makes no absolute throughput or heap claim.
+- `trustedRegex` and machine-readable CSV are intentionally sharp tools whose names and Javadocs
+  expose the trust boundary.
+- Static analysis cannot observe reflection-only, native, generated-at-runtime, or string-assembled
+  dependencies.
 
 ## Local review commands
 
@@ -53,16 +85,15 @@ and a fresh review are committed. It must not be changed merely because the pack
 ./mvnw --batch-mode --no-transfer-progress -f examples/basic/pom.xml test
 ```
 
-To exercise publishing mechanics without a remote system, use a disposable directory and keep GPG
-disabled. For example on a Unix-like shell:
+To build a Central bundle without uploading it, materialize a non-snapshot version in a disposable
+checkout and run:
 
 ```shell
-stage="$(mktemp -d)"
-./mvnw --batch-mode --no-transfer-progress -Prelease-candidate,release-sign \
-  -Dgpg.skip=true \
-  -DaltDeploymentRepository=release-dry-run::file:"$stage" deploy
+./mvnw org.codehaus.mojo:versions-maven-plugin:2.19.1:set \
+  -DgenerateBackupPoms=false -DnewVersion=0.1.0
+./mvnw -Prelease-candidate,release-sign,central-release \
+  -Dcentral.skipPublishing=true \
+  -Dgpg.keyname="$MAVEN_GPG_KEY_FINGERPRINT" deploy
 ```
 
-This writes Maven repository metadata only below the explicitly supplied local directory. A real
-release requires a reviewed tag, non-snapshot version, protected signing key, approved remote staging
-target, checksum/signature verification, and a separate human authorization to publish.
+The release workflow performs the corresponding credentialed upload with `autoPublish=false`.

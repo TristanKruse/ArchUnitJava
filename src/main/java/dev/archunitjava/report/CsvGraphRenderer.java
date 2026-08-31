@@ -15,7 +15,17 @@ public final class CsvGraphRenderer {
 
     private CsvGraphRenderer() {}
 
+    /**
+     * Renders spreadsheet-safe CSV. Cells that spreadsheet programs could interpret as formulas
+     * are prefixed with an apostrophe. Use {@link #renderMachineReadable(GraphSnapshot)} only for
+     * lossless machine interchange that will not be opened as a spreadsheet.
+     */
     public static String render(GraphSnapshot snapshot) {
+        return neutralizeFormulas(renderMachineReadable(snapshot));
+    }
+
+    /** Renders lossless machine-readable CSV without spreadsheet formula neutralization. */
+    public static String renderMachineReadable(GraphSnapshot snapshot) {
         GraphSnapshot value = Objects.requireNonNull(snapshot, "snapshot");
         StringBuilder result = new StringBuilder();
         row(result, HEADER);
@@ -92,6 +102,11 @@ public final class CsvGraphRenderer {
         return render(snapshot).getBytes(StandardCharsets.UTF_8);
     }
 
+    /** Returns the lossless machine-readable representation as UTF-8 bytes. */
+    public static byte[] renderMachineReadableBytes(GraphSnapshot snapshot) {
+        return renderMachineReadable(snapshot).getBytes(StandardCharsets.UTF_8);
+    }
+
     private static void metadata(
             StringBuilder out, GraphSnapshot snapshot, String key, String value) {
         row(out, fields(
@@ -124,5 +139,33 @@ public final class CsvGraphRenderer {
             out.append('"').append(values.get(index).replace("\"", "\"\"")).append('"');
         }
         out.append('\n');
+    }
+
+    private static String neutralizeFormulas(String csv) {
+        StringBuilder result = new StringBuilder(csv.length());
+        boolean quoted = false;
+        for (int index = 0; index < csv.length(); index++) {
+            char character = csv.charAt(index);
+            result.append(character);
+            if (!quoted && character == '"') {
+                quoted = true;
+                if (index + 1 < csv.length() && formulaPrefix(csv.charAt(index + 1))) {
+                    result.append('\'');
+                }
+            } else if (quoted && character == '"') {
+                if (index + 1 < csv.length() && csv.charAt(index + 1) == '"') {
+                    result.append('"');
+                    index++;
+                } else {
+                    quoted = false;
+                }
+            }
+        }
+        return result.toString();
+    }
+
+    private static boolean formulaPrefix(char value) {
+        return value == '=' || value == '+' || value == '-' || value == '@'
+                || value == '\t' || value == '\r' || value == '\n';
     }
 }

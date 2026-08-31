@@ -31,8 +31,11 @@ final class Names {
                 || value.indexOf('/') >= 0 || value.indexOf('[') >= 0 || value.indexOf(';') >= 0) {
             throw new IllegalArgumentException("Invalid binary name: " + value);
         }
-        for (String part : value.split("\\.", -1)) {
-            if (!binaryNamePart(part)) {
+        String[] parts = value.split("\\.", -1);
+        for (int index = 0; index < parts.length; index++) {
+            String part = parts[index];
+            boolean packageDescriptor = index == parts.length - 1 && part.equals("package-info");
+            if (!packageDescriptor && !binaryNamePart(part)) {
                 throw new IllegalArgumentException("Invalid binary name: " + value);
             }
         }

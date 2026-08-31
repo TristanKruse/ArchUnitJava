@@ -1,32 +1,11 @@
-# Java backlog research
+# Java design research
 
 ## Product framing
 
 Java already has the mature original ArchUnit. ArchUnitJava is an independent
 Java member of the ArchUnitEverything family, not a claim that Java lacks an
-architecture-testing library. The benchmark is useful conceptual coverage and
-engineering quality, not compatibility by imitation.
-
-## What transfers from the sibling libraries
-
-The completed Ruby backlog validates a useful language-neutral backbone:
-deterministic dependency graphs, pattern matching, projection, cycle detection,
-immutable fluent rules, empty-selection protection, layers, slices, PlantUML,
-graph reports, metrics, test integration, dogfooding, documentation, CI, and
-release evidence.
-
-Python and TypeScript expose later gaps that should be designed in rather than
-retrofitted: `.archignore`, rule rationale and names, annotation/decorator
-rules, public-interface boundaries, mutual independence, exhaustive policies,
-clean-architecture presets, cumulative metrics, a CLI, and CI-oriented result
-formats. TypeScript also demonstrates why path aliases, barrel/public entry
-points, cache semantics, and report filtering need explicit contracts.
-
-The Rust backlog contributes planning lessons: granular scope, dependency
-readiness, extraction corpora, adversarial inputs, deterministic exports,
-baselines, and a release decision based on evidence. Only its first GitHub
-product issue was completed; its expanded plan is not evidence of implemented
-Rust features.
+architecture-testing library. The design aims for broad conceptual coverage
+and strong engineering contracts without copying or claiming API compatibility.
 
 ## What is genuinely Java-specific
 

@@ -32,10 +32,11 @@ No absolute time or memory threshold runs in ordinary CI. Host load, filesystem 
 compilation, garbage collection, and runner sizing make such assertions noisy. A future release may
 add statistically evaluated trend checks on dedicated hardware; that is distinct from unit tests.
 
-## Known finding
+## Scope and resolved finding
 
-The open-source corpus includes `package-info.class`. Import preserves it correctly, but the current
-type-rule and component-composition entry points cannot turn its JVM binary name into a `TypeId`.
-The benchmark therefore excludes package-info declarations only for those two downstream stages and
-keeps them in the semantic import snapshot. This is a release-readiness blocker, not a benchmark
-workaround to hide a parser failure.
+The open-source corpus includes `package-info.class`. Its stable JVM identity now flows through
+import, graph construction, type rules, and package composition; the benchmark contains no
+package-info exclusion. The resulting semantic snapshot change was reviewed and pinned.
+
+The corpus is still modest and library-shaped rather than a large application. Consequently these
+measurements are regression evidence, not a scalability or throughput claim for `0.1.0`.

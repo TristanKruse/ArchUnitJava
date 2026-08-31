@@ -61,6 +61,9 @@ jobs:
   release-dry-run:
     needs: verify
     runs-on: ubuntu-latest
+    env:
+      CI_CENTRAL_USERNAME: local-dry-run
+      CI_CENTRAL_PASSWORD: local-dry-run
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
@@ -68,6 +71,9 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+          server-id: central
+          server-username-env-var: CI_CENTRAL_USERNAME
+          server-password-env-var: CI_CENTRAL_PASSWORD
       - name: Check release documentation
         shell: bash
         run: |

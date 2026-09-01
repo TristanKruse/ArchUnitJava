@@ -28,4 +28,38 @@ Copy-Item -LiteralPath (Join-Path $repositoryRoot 'docs\site\favicon.svg') -Dest
 Copy-Item -Path (Join-Path $apiSource '*') -Destination (Join-Path $siteRoot 'api') -Recurse
 New-Item -ItemType File -Path (Join-Path $siteRoot '.nojekyll') -Force | Out-Null
 
+$landingPath = Join-Path $siteRoot 'index.html'
+$landingHtml = Get-Content -LiteralPath $landingPath -Raw
+$references = [regex]::Matches($landingHtml, '(?:href|src)="([^"]+)"') |
+    ForEach-Object { $_.Groups[1].Value }
+
+foreach ($reference in $references) {
+    if ($reference -match '^(?:https?:|mailto:|tel:)') {
+        continue
+    }
+
+    $parts = $reference.Split('#', 2)
+    $relativePath = $parts[0]
+    $fragment = if ($parts.Count -eq 2) { $parts[1] } else { '' }
+
+    if ($relativePath.Length -gt 0) {
+        if ($relativePath.EndsWith('/')) {
+            $relativePath += 'index.html'
+        }
+        $resolvedReference = [System.IO.Path]::GetFullPath((Join-Path $siteRoot $relativePath))
+        if (-not $resolvedReference.StartsWith(
+                $siteRoot + [System.IO.Path]::DirectorySeparatorChar,
+                [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Documentation reference escapes the site root: $reference"
+        }
+        if (-not (Test-Path -LiteralPath $resolvedReference)) {
+            throw "Broken documentation reference: $reference"
+        }
+    }
+
+    if ($fragment.Length -gt 0 -and $landingHtml -notmatch ('id="' + [regex]::Escape($fragment) + '"')) {
+        throw "Broken documentation fragment: $reference"
+    }
+}
+
 Write-Output "Documentation site assembled at $siteRoot"

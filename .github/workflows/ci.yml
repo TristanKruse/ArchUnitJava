@@ -162,6 +162,9 @@ jobs:
           jar tf target/archunitjava-0.1.0-SNAPSHOT.jar | grep -F 'dev/archunitjava/cli/ArchUnitJavaCli.class'
           jar tf target/archunitjava-0.1.0-SNAPSHOT.jar | grep -F 'META-INF/services/org.junit.platform.engine.TestEngine'
           unzip -p target/archunitjava-0.1.0-SNAPSHOT.jar META-INF/MANIFEST.MF | grep -F 'Automatic-Module-Name: dev.archunitjava'
+      - name: Assemble and validate GitHub Pages
+        shell: pwsh
+        run: ./scripts/build-pages.ps1
       - name: Verify external Maven consumer
         shell: bash
         run: |

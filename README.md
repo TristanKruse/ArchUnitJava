@@ -2,11 +2,17 @@
 
 <div align="center" name="top">
 
+  <img src="docs/site/favicon.svg" width="150" height="150" alt="ArchUnitJava logo">
+
+<!-- spacer -->
+<p></p>
+
 [![CI](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/ci.yml/badge.svg)](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/ci.yml)
 [![Documentation](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/docs.yml/badge.svg)](https://tristankruse.github.io/ArchUnitJava/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Java 25](https://img.shields.io/badge/Java-25-E76F00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/25/)
 [![Status: staging ready](https://img.shields.io/badge/status-staging%20ready-2da44e)](docs/RELEASE.md)
+[![GitHub stars](https://img.shields.io/github/stars/TristanKruse/ArchUnitJava.svg)](https://github.com/TristanKruse/ArchUnitJava)
 
 </div>
 
@@ -26,6 +32,7 @@ implemented and not affiliated with ArchUnit. This is not a drop-in replacement.
 [Capabilities](#-capabilities) · [Reports](#-reports) ·
 [Example repository](#-independent-example-repository) ·
 [Documentation](https://tristankruse.github.io/ArchUnitJava/) ·
+[FAQ](#-faq) · [Contributing](CONTRIBUTING.md) ·
 [Limitations](#-current-limitations)
 
 ## ⚡ Five-minute quickstart
@@ -42,6 +49,12 @@ cd ArchUnitJava
 
 On Windows, use `mvnw.cmd` instead of `mvnw`.
 
+The Java packaging terms are easy to mix up: **Maven Central** is the public package registry,
+**Central Portal** is Sonatype's publisher UI and API, and **Maven** and **Gradle** are dependency
+tools that download packages from registries. Consumers do not need a Central Portal account.
+After `0.1.0` is published, the local installation step disappears and Maven or Gradle can resolve
+the release directly from Maven Central.
+
 ### 2. Add the test dependency
 
 ```xml
@@ -54,6 +67,21 @@ On Windows, use `mvnw.cmd` instead of `mvnw`.
 ```
 
 Production application code does not need an ArchUnitJava dependency.
+
+For a Gradle consumer of the locally installed candidate, include Maven Local before Maven Central:
+
+```kotlin
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation("io.github.tristankruse:archunitjava:0.1.0-SNAPSHOT")
+}
+```
+
+After publication, use version `0.1.0` and `mavenCentral()`; `mavenLocal()` is no longer required.
 
 ### 3. Define an architecture policy
 
@@ -294,7 +322,7 @@ policy. See [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for the full boundary
 
 Read the complete [compatibility contract](docs/COMPATIBILITY.md).
 
-## 🛠️ Build and contribute
+## 🛠️ Development
 
 Linux and macOS:
 
@@ -329,6 +357,17 @@ Useful technical guides:
 - [Threat model](docs/THREAT_MODEL.md)
 - [Research and product decisions](docs/RESEARCH.md)
 
+## 🦊 Contributing
+
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing public
+semantics, schemas, the JDK floor, Maven coordinates, or the bytecode backend. Every behavioral
+change should include a focused regression test, and packaging or integration changes should also
+be verified against the independent RAG consumer.
+
+Please report vulnerabilities through GitHub's private
+[security-advisory form](https://github.com/TristanKruse/ArchUnitJava/security/advisories/new), not a
+public issue. The supported scope and reporting guidance are in [SECURITY.md](SECURITY.md).
+
 ## ⚖️ Should I use this or ArchUnit?
 
 The original [ArchUnit](https://www.archunit.org/) is mature, widely used, and is generally the
@@ -351,6 +390,42 @@ the assumption of ArchUnit compatibility.
 
 These limitations are tracked in the [release assessment](docs/RELEASE.md) rather than hidden behind
 a stability claim.
+
+## ℹ️ FAQ
+
+**Is Maven Central the Java equivalent of npm, PyPI, or RubyGems?**
+
+Yes. Maven Central is the public registry. Maven and Gradle are the usual clients; Central Portal
+is used only by maintainers to stage and publish releases.
+
+**Will an application need JDK 25 even if its own bytecode targets an older Java version?**
+
+For the current release candidate, yes: ArchUnitJava itself runs on JDK 25 because it uses the JDK
+class-file API. It can analyze `javac` bytecode produced for Java 8 through Java 25.
+
+**Does analysis execute application classes or the target project's build?**
+
+No. It parses class directories and JARs as untrusted data. It does not load target classes, invoke
+their initializers, or run target build plugins and annotation processors.
+
+**Does it work only with JUnit?**
+
+No. The core result and assertion APIs are framework-neutral. JUnit Jupiter helpers and an optional
+JUnit Platform engine are included because JUnit is the normal Java test workflow.
+
+**Is this a replacement for the established ArchUnit library?**
+
+Not currently. ArchUnit is the mature default for production Java systems. ArchUnitJava is an
+independent, provisional implementation exploring the cross-language ArchUnitEverything model and
+a stricter bytecode-as-untrusted-data boundary.
+
+## 💟 Community
+
+ArchUnitJava is maintained by [TristanKruse](https://github.com/TristanKruse). To participate:
+
+- [open an issue](https://github.com/TristanKruse/ArchUnitJava/issues/new/choose) for a bug or feature;
+- [review existing issues](https://github.com/TristanKruse/ArchUnitJava/issues); or
+- contribute code or documentation through a pull request.
 
 ## 🌍 ArchUnitEverything family
 

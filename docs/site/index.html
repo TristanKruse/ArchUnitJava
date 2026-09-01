@@ -15,6 +15,7 @@
       <a class="brand" href="#top"><span class="brand-mark">AJ</span> ArchUnitJava</a>
       <div class="nav-links">
         <a href="#quickstart">Quickstart</a>
+        <a href="#use-cases">Use cases</a>
         <a href="#capabilities">Capabilities</a>
         <a href="#evidence">Evidence</a>
         <a href="api/">API reference</a>
@@ -65,6 +66,9 @@
         <h2>Analyze a normal Maven project.</h2>
         <p>The candidate is not published yet. Install it locally, add it as a test dependency,
           and point a bounded policy file at compiled classes.</p>
+        <p><strong>Maven Central</strong> is the public registry; <strong>Central Portal</strong> is
+          its publisher interface. Maven and Gradle consumers will resolve the release from Central
+          without needing a Portal account after version 0.1.0 is published.</p>
       </div>
       <div class="grid-2">
         <div class="code-card">
@@ -119,6 +123,18 @@
 <span class="property">rule.api-boundary.external</span>=ignore
 <span class="property">rule.api-boundary.rationale</span>=Keep adapters behind application ports</code></pre>
         </div>
+      </div>
+    </section>
+
+    <section class="section" id="use-cases" aria-label="Common use cases">
+      <div class="section-header">
+        <p class="eyebrow">Use cases</p>
+        <h2>Make architecture drift fail like any other test.</h2>
+      </div>
+      <div class="grid-3">
+        <article class="card"><h3>Dependency boundaries</h3><p>Keep domain code independent, adapters behind ports, and APIs away from persistence details.</p></article>
+        <article class="card"><h3>Cycles and coupling</h3><p>Detect cycles across types, packages, slices, layers, and modules with concrete bytecode evidence.</p></article>
+        <article class="card"><h3>CI evidence</h3><p>Run policies in JUnit or the CLI and export stable JSON, SARIF, JUnit XML, and graph reports.</p></article>
       </div>
     </section>
 
@@ -190,6 +206,21 @@
             native code, runtime generation, or dynamically assembled strings.</p>
           <a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/RELEASE.md">Read the complete decision record →</a>
         </aside>
+      </div>
+    </section>
+
+    <section class="section" id="community">
+      <div class="section-header">
+        <p class="eyebrow">ArchUnitEverything family</p>
+        <h2>One product idea, native language workflows.</h2>
+        <p>ArchUnitJava shares the goal and information structure of its Ruby, Python, and
+          TypeScript siblings while using Java-native Maven, Gradle, JUnit, and Javadocs tooling.</p>
+      </div>
+      <div class="actions">
+        <a class="button" href="https://github.com/LukasNiessen/ArchUnitRuby">ArchUnitRuby</a>
+        <a class="button" href="https://github.com/LukasNiessen/ArchUnitPython">ArchUnitPython</a>
+        <a class="button" href="https://github.com/LukasNiessen/ArchUnitTS">ArchUnitTS</a>
+        <a class="button primary" href="https://github.com/TristanKruse/ArchUnitJava/issues">Issues and roadmap</a>
       </div>
     </section>
   </main>

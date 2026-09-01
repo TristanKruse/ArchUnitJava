@@ -67,12 +67,17 @@ Publisher/account setup was completed on 2026-09-01:
 - The Central token expires on 2027-09-01 and the signing key on 2028-08-31. Rotate each credential
   before its expiry without changing published component coordinates.
 
-The remaining actions intentionally create release state:
+The remaining actions intentionally create release state. The signing passphrase remains readable
+only by the protected GitHub environment; `prepare-release.yml` therefore creates and verifies the
+signed tag without copying that secret to a maintainer workstation:
 
-1. Review the exact commit, create signed tag `v0.1.0`, and dispatch `release.yml` from that tag with
-   version `0.1.0` and confirmation `stage`.
-2. Approve the `maven-central` environment gate so GitHub can upload the signed, user-managed
-   deployment for Central validation.
+1. Review the exact commit and dispatch `prepare-release.yml` from `main` with version `0.1.0`, the
+   full reviewed commit SHA, and confirmation `tag`. Approve the `maven-central` environment gate;
+   the job requires that SHA to be the current tip of `main`, creates signed tag `v0.1.0`, verifies
+   its signature, and pushes only that tag.
+2. Dispatch `release.yml` from tag `v0.1.0` with version `0.1.0` and confirmation `stage`, then
+   approve the environment gate so GitHub can upload the signed, user-managed deployment for Central
+   validation.
 3. Review Central's validation result, downloaded signatures/checksums, generated POM, and consumer
    smoke test. Publishing the validated deployment requires a separate human action in Central.
 

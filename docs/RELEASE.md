@@ -1,12 +1,12 @@
-# Release readiness
+# Release status
 
-**Decision: GO FOR USER-MANAGED STAGING** of public `0.1.0`; publication remains a separate manual
-decision.
+**Decision: PUBLISHED.** Version `0.1.0` became publicly available from Maven Central on
+2026-09-01.
 
-The repository can produce and locally validate `io.github.tristankruse:archunitjava:0.1.0`. The
-tag-gated release workflow uploads a signed bundle to the Maven Central Portal with automatic
-publishing disabled. No artifact has been published, and a validated deployment must still be
-reviewed and explicitly released by a human because Maven Central artifacts are immutable.
+The immutable coordinates are `io.github.tristankruse:archunitjava:0.1.0`. The protected release
+workflow uploaded a signed, user-managed deployment with automatic publishing disabled. Central
+validated the deployment, a human reviewed the retained bundle, and publication was confirmed only
+after the immutability warning.
 
 ## Evidence available
 
@@ -22,8 +22,9 @@ reviewed and explicitly released by a human because Maven Central artifacts are 
 - SpotBugs reports no analysis errors, missing classes, mutable-input exposure, null-path, resource,
   or constructor-safety findings. CI rejects every category outside the reviewed immutable-collection
   accessor and intentional natural-order baseline.
-- `examples/basic` and the separate RAG repository compile and test against a locally installed
-  candidate.
+- `examples/basic` tests the current locally installed development candidate. The separate RAG
+  repository resolves public `0.1.0` directly from Maven Central in its own Linux and Windows CI;
+  library CI overrides that version when exercising the current development candidate.
 - The official Central Portal Maven plugin creates a user-managed bundle. GPG uses best-practices
   mode, and release CI obtains credentials and passphrases only through environment-backed GitHub
   secrets.
@@ -51,7 +52,7 @@ reviewed and explicitly released by a human because Maven Central artifacts are 
 6. Javadoc generation now fails on actionable doclint warnings while treating missing
    record-component tags as a documentation backlog rather than a semantic release failure.
 
-## Publisher integration and remaining release actions
+## Publisher integration and v0.1.0 publication
 
 Publisher/account setup was completed on 2026-09-01:
 
@@ -67,19 +68,27 @@ Publisher/account setup was completed on 2026-09-01:
 - The Central token expires on 2027-09-01 and the signing key on 2028-08-31. Rotate each credential
   before its expiry without changing published component coordinates.
 
-The remaining actions intentionally create release state. The signing passphrase remains readable
-only by the protected GitHub environment; `prepare-release.yml` therefore creates and verifies the
-signed tag without copying that secret to a maintainer workstation:
+Publication evidence:
 
-1. Review the exact commit and dispatch `prepare-release.yml` from `main` with version `0.1.0`, the
-   full reviewed commit SHA, and confirmation `tag`. Approve the `maven-central` environment gate;
-   the job requires that SHA to be the current tip of `main`, creates signed tag `v0.1.0`, verifies
-   its signature, and pushes only that tag.
-2. Dispatch `release.yml` from `main` with version `0.1.0` and confirmation `stage`, then approve the
-   environment gate. The workflow checks out signed tag `v0.1.0`, verifies its signature, and uploads
-   the signed, user-managed deployment for Central validation.
-3. Review Central's validation result, downloaded signatures/checksums, generated POM, and consumer
-   smoke test. Publishing the validated deployment requires a separate human action in Central.
+- Signed tag `v0.1.0` resolves to reviewed commit
+  `631e4506e99b8604b096971792fadba9e5edb55d`; independent GPG verification returned `GOODSIG` and
+  `VALIDSIG` for the dedicated signing-key fingerprint.
+- [GitHub Actions staging run 33523489977](https://github.com/TristanKruse/ArchUnitJava/actions/runs/33523489977)
+  verified the tag, materialized `0.1.0`, ran 347 tests with zero failures or errors, signed the four
+  release artifacts, uploaded the bundle, and waited for Central validation.
+- Central deployment `12dfc7c7-4015-4fbf-887e-bc3103ff6560` validated one out of one components and
+  reached `PUBLISHED` after explicit human confirmation.
+- The retained bundle contains the primary, source, and Javadoc JARs plus the generated POM. All 16
+  MD5, SHA-1, SHA-256, and SHA-512 checksum files matched, and all four detached signatures verified
+  against fingerprint `8F7C42989C49216FA75523251BB3BFA38C776312`.
+- The public POM and artifacts resolve from
+  [Maven Central](https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0).
+
+For future releases, `prepare-release.yml` creates and verifies a signed tag without copying the
+passphrase to a maintainer workstation. `release.yml` then checks out that immutable tag, verifies
+its signature, uploads a user-managed deployment, and waits for validation. Reviewing and publishing
+the validated deployment remain separate human decisions because Central versions cannot be
+replaced or deleted.
 
 ## Known limitations that remain part of the 0.1.0 contract
 
@@ -105,5 +114,5 @@ The `release-dry-run` CI job materializes a non-snapshot version, creates a disp
 and runs the real Central plugin against an unreachable loopback endpoint. The expected upload
 failure occurs only after bundle creation; CI then verifies the signed primary, source, Javadoc, and
 POM entries in `central-bundle.zip`. This exercises the bundler while making a remote upload
-impossible. The tag-gated release workflow performs the corresponding credentialed upload with
+impossible. The protected release workflow performs the corresponding credentialed upload with
 `autoPublish=false`.

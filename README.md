@@ -11,7 +11,8 @@
 [![Documentation](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/docs.yml/badge.svg)](https://tristankruse.github.io/ArchUnitJava/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Java 25](https://img.shields.io/badge/Java-25-E76F00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/25/)
-[![Status: staging ready](https://img.shields.io/badge/status-staging%20ready-2da44e)](docs/RELEASE.md)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.tristankruse/archunitjava.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0)
+[![Status: released](https://img.shields.io/badge/status-released-2da44e)](docs/RELEASE.md)
 [![GitHub stars](https://img.shields.io/github/stars/TristanKruse/ArchUnitJava.svg)](https://github.com/TristanKruse/ArchUnitJava)
 
 </div>
@@ -20,10 +21,10 @@ Enforce architecture boundaries against compiled Java code. ArchUnitJava reads c
 and JARs without loading target classes, builds an immutable dependency model, evaluates
 deterministic policies, and produces evidence for JUnit and CI.
 
-> **Release status:** the reviewed `0.1.0-SNAPSHOT` build and publisher integration are **GO for
-> user-managed Maven Central staging**. Publishing remains a separate manual decision, and no
-> artifact has been published. See the evidence and remaining release actions in the
-> [release assessment](docs/RELEASE.md).
+> **Release status:** `io.github.tristankruse:archunitjava:0.1.0` is published on
+> [Maven Central](https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0).
+> Its signed tag, Central validation, checksums, signatures, and publication record are documented
+> in the [release assessment](docs/RELEASE.md).
 
 _Inspired by the established [ArchUnit](https://www.archunit.org/) project, but independently
 implemented and not affiliated with ArchUnit. This is not a drop-in replacement._
@@ -37,23 +38,12 @@ implemented and not affiliated with ArchUnit. This is not a drop-in replacement.
 
 ## ⚡ Five-minute quickstart
 
-### 1. Install the reviewed candidate
-
-The artifact is not available from a public Maven repository yet. Build and install it locally:
-
-```shell
-git clone https://github.com/TristanKruse/ArchUnitJava.git
-cd ArchUnitJava
-./mvnw -Prelease-candidate install
-```
-
-On Windows, use `mvnw.cmd` instead of `mvnw`.
+### 1. Use Maven Central
 
 The Java packaging terms are easy to mix up: **Maven Central** is the public package registry,
 **Central Portal** is Sonatype's publisher UI and API, and **Maven** and **Gradle** are dependency
 tools that download packages from registries. Consumers do not need a Central Portal account.
-After `0.1.0` is published, the local installation step disappears and Maven or Gradle can resolve
-the release directly from Maven Central.
+Maven uses Central by default; Gradle consumers only need `mavenCentral()`.
 
 ### 2. Add the test dependency
 
@@ -61,27 +51,24 @@ the release directly from Maven Central.
 <dependency>
   <groupId>io.github.tristankruse</groupId>
   <artifactId>archunitjava</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
   <scope>test</scope>
 </dependency>
 ```
 
 Production application code does not need an ArchUnitJava dependency.
 
-For a Gradle consumer of the locally installed candidate, include Maven Local before Maven Central:
+For Gradle:
 
 ```kotlin
 repositories {
-    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
-    testImplementation("io.github.tristankruse:archunitjava:0.1.0-SNAPSHOT")
+    testImplementation("io.github.tristankruse:archunitjava:0.1.0")
 }
 ```
-
-After publication, use version `0.1.0` and `mavenCentral()`; `mavenLocal()` is no longer required.
 
 ### 3. Define an architecture policy
 
@@ -375,13 +362,13 @@ correct choice for production Java architecture testing today.
 
 ArchUnitJava exists to explore a consistent ArchUnitEverything product family, a
 bytecode-as-untrusted-data security boundary, explicit completeness, deterministic evidence, and
-cross-language architecture-policy concepts. Evaluate this candidate when those goals are relevant
-and you are comfortable with an unpublished, provisional pre-1.0 API. Do not migrate a production system on
-the assumption of ArchUnit compatibility.
+cross-language architecture-policy concepts. Evaluate this release when those goals are relevant
+and you are comfortable with a provisional pre-1.0 API. Do not migrate a production system on the
+assumption of ArchUnit compatibility.
 
 ## 📅 Current limitations
 
-- The code is ready for user-managed staging, but no package has been published.
+- Version `0.1.0` is published, but the API remains provisional before 1.0.
 - The CLI intentionally exposes only a subset of the lower-level Java rule surface.
 - JDK 25 is currently required at runtime because the importer uses `java.lang.classfile`.
 - Dynamic runtime dependencies are invisible to static bytecode analysis.
@@ -400,7 +387,7 @@ is used only by maintainers to stage and publish releases.
 
 **Will an application need JDK 25 even if its own bytecode targets an older Java version?**
 
-For the current release candidate, yes: ArchUnitJava itself runs on JDK 25 because it uses the JDK
+For version `0.1.0`, yes: ArchUnitJava itself runs on JDK 25 because it uses the JDK
 class-file API. It can analyze `javac` bytecode produced for Java 8 through Java 25.
 
 **Does analysis execute application classes or the target project's build?**

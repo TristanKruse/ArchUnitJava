@@ -1,9 +1,11 @@
 # Changelog
 
 All notable changes will be documented here. The project follows Keep a Changelog structure and
-intends to use semantic versioning after its first supported public release.
+uses semantic versioning for public releases.
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-09-01
 
 ### Added
 
@@ -31,4 +33,5 @@ intends to use semantic versioning after its first supported public release.
 - The performance corpus is regression evidence, not an absolute scalability claim.
 - Unrestricted regex and lossless non-neutralized CSV require explicitly named trusted APIs.
 
-No public version has been released or published.
+[Unreleased]: https://github.com/TristanKruse/ArchUnitJava/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/TristanKruse/ArchUnitJava/releases/tag/v0.1.0

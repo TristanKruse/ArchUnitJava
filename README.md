@@ -20,9 +20,9 @@ Enforce architecture boundaries against compiled Java code. ArchUnitJava reads c
 and JARs without loading target classes, builds an immutable dependency model, evaluates
 deterministic policies, and produces evidence for JUnit and CI.
 
-> **Release status:** the reviewed `0.1.0-SNAPSHOT` build is **GO for user-managed Maven Central
-> staging**. Publishing remains a separate manual decision, and no artifact has been published. See
-> the evidence and external publisher prerequisites in the
+> **Release status:** the reviewed `0.1.0-SNAPSHOT` build and publisher integration are **GO for
+> user-managed Maven Central staging**. Publishing remains a separate manual decision, and no
+> artifact has been published. See the evidence and remaining release actions in the
 > [release assessment](docs/RELEASE.md).
 
 _Inspired by the established [ArchUnit](https://www.archunit.org/) project, but independently

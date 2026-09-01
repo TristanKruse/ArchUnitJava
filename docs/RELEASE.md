@@ -51,18 +51,29 @@ reviewed and explicitly released by a human because Maven Central artifacts are 
 6. Javadoc generation now fails on actionable doclint warnings while treating missing
    record-component tags as a documentation backlog rather than a semantic release failure.
 
-## External prerequisites before the first staging run
+## Publisher integration and remaining release actions
 
-These are publisher/account operations and cannot be proven by source code alone:
+Publisher/account setup was completed on 2026-09-01:
 
-1. Sign in to the Central Portal through the `TristanKruse` GitHub identity and confirm that the
-   automatically provisioned `io.github.tristankruse` namespace is verified.
-2. Create a dedicated signing key, publish its public key, and configure the protected
-   `maven-central` GitHub environment with `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`,
-   `MAVEN_GPG_PRIVATE_KEY`, `MAVEN_GPG_PASSPHRASE`, and `MAVEN_GPG_KEY_FINGERPRINT` secrets.
-3. Review the exact commit, create signed tag `v0.1.0`, and dispatch `release.yml` from that tag with
+- Central Portal access uses the `TristanKruse` GitHub identity, and
+  `io.github.tristankruse` is verified.
+- The protected `maven-central` GitHub environment requires `TristanKruse` approval before release
+  jobs can access its secrets.
+- `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `MAVEN_GPG_PRIVATE_KEY`,
+  `MAVEN_GPG_PASSPHRASE`, and `MAVEN_GPG_KEY_FINGERPRINT` are configured as environment secrets.
+- The dedicated signing key has fingerprint `8F7C42989C49216FA75523251BB3BFA38C776312`.
+  Its public key is available from `keyserver.ubuntu.com`; its private key and passphrase are not
+  stored in the repository.
+- The Central token expires on 2027-09-01 and the signing key on 2028-08-31. Rotate each credential
+  before its expiry without changing published component coordinates.
+
+The remaining actions intentionally create release state:
+
+1. Review the exact commit, create signed tag `v0.1.0`, and dispatch `release.yml` from that tag with
    version `0.1.0` and confirmation `stage`.
-4. Review Central's validation result, downloaded signatures/checksums, generated POM, and consumer
+2. Approve the `maven-central` environment gate so GitHub can upload the signed, user-managed
+   deployment for Central validation.
+3. Review Central's validation result, downloaded signatures/checksums, generated POM, and consumer
    smoke test. Publishing the validated deployment requires a separate human action in Central.
 
 ## Known limitations that remain part of the 0.1.0 contract

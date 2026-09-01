@@ -198,10 +198,11 @@
           </ul>
         </div>
         <aside class="callout">
-          <strong>Honest status: code-ready, not yet published.</strong>
+          <strong>Honest status: staging integration configured, not yet published.</strong>
           <p>Baseline ingestion, <code>package-info.class</code>, regex safety, CSV hardening, and
-            Central bundle configuration have passed the source-level release gate. Publisher
-            namespace, signing key, and Central credentials remain external prerequisites.</p>
+            Central bundle configuration have passed the release gate. The verified publisher
+            namespace, protected GitHub environment, Central token, and public signing key are now
+            configured. A signed tag and approved staging run remain deliberate human actions.</p>
           <p>Static analysis also cannot observe dependencies introduced only through reflection,
             native code, runtime generation, or dynamically assembled strings.</p>
           <a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/RELEASE.md">Read the complete decision record →</a>

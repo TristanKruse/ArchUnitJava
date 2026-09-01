@@ -75,9 +75,9 @@ signed tag without copying that secret to a maintainer workstation:
    full reviewed commit SHA, and confirmation `tag`. Approve the `maven-central` environment gate;
    the job requires that SHA to be the current tip of `main`, creates signed tag `v0.1.0`, verifies
    its signature, and pushes only that tag.
-2. Dispatch `release.yml` from tag `v0.1.0` with version `0.1.0` and confirmation `stage`, then
-   approve the environment gate so GitHub can upload the signed, user-managed deployment for Central
-   validation.
+2. Dispatch `release.yml` from `main` with version `0.1.0` and confirmation `stage`, then approve the
+   environment gate. The workflow checks out signed tag `v0.1.0`, verifies its signature, and uploads
+   the signed, user-managed deployment for Central validation.
 3. Review Central's validation result, downloaded signatures/checksums, generated POM, and consumer
    smoke test. Publishing the validated deployment requires a separate human action in Central.
 

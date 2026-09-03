@@ -8,7 +8,7 @@
   <artifactId>archunitjava</artifactId>
   <version>0.2.0-SNAPSHOT</version>
   <name>ArchUnitJava</name>
-  <description>Static architecture analysis and executable architecture policies for Java</description>
+  <description>Public-beta static architecture analysis and executable architecture policies for Java</description>
   <url>https://github.com/TristanKruse/ArchUnitJava</url>
 
   <licenses>

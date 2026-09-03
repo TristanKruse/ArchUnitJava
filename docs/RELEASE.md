@@ -1,12 +1,15 @@
 # Release status
 
-**Decision: PUBLISHED.** Version `0.1.0` became publicly available from Maven Central on
+**Decision: PUBLISHED PUBLIC BETA.** Version `0.1.0` became publicly available from Maven Central on
 2026-09-01.
 
 The immutable coordinates are `io.github.tristankruse:archunitjava:0.1.0`. The protected release
 workflow uploaded a signed, user-managed deployment with automatic publishing disabled. Central
 validated the deployment, a human reviewed the retained bundle, and publication was confirmed only
 after the immutability warning.
+
+The release is deliberately presented as a public beta. Publication proves that installation and
+release mechanics work; it does not promote the provisional pre-1.0 Java API to a stable contract.
 
 ## Evidence available
 

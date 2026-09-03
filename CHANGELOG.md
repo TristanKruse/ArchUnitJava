@@ -5,6 +5,13 @@ uses semantic versioning for public releases.
 
 ## [Unreleased]
 
+### Documentation
+
+- identify the published line consistently as a public beta;
+- add a feature-oriented user guide, complete CLI configuration reference, support policy, issue
+  forms, pull-request checklist, and code of conduct; and
+- introduce the Java orange-and-blue AU family logo plus a dedicated GitHub social preview.
+
 ## [0.1.0] - 2026-09-01
 
 ### Added

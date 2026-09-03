@@ -3,20 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="ArchUnitJava — static architecture analysis and executable architecture policies for compiled Java code.">
+  <meta name="description" content="ArchUnitJava public beta — static architecture analysis and executable architecture policies for compiled Java code.">
+  <meta property="og:title" content="ArchUnitJava — Architecture testing for compiled Java">
+  <meta property="og:description" content="A public-beta architecture-testing library with deterministic rules, JUnit integration, and evidence-rich reports.">
+  <meta property="og:image" content="https://tristankruse.github.io/ArchUnitJava/social-preview.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
   <title>ArchUnitJava — Architecture rules for compiled Java</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="logo-rounded.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <nav class="nav" aria-label="Primary navigation">
     <div class="nav-inner">
-      <a class="brand" href="#top"><span class="brand-mark">AJ</span> ArchUnitJava</a>
+      <a class="brand" href="#top"><img class="brand-mark" src="logo-rounded.png" alt=""> ArchUnitJava</a>
       <div class="nav-links">
         <a href="#quickstart">Quickstart</a>
         <a href="#use-cases">Use cases</a>
         <a href="#capabilities">Capabilities</a>
+        <a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/USER_GUIDE.md">User guide</a>
         <a href="#evidence">Evidence</a>
         <a href="api/">API reference</a>
         <a href="https://github.com/TristanKruse/ArchUnitJava">GitHub</a>
@@ -32,19 +39,20 @@
         <p class="lede">Import compiled classes without loading them, model their real dependency
           graph, evaluate deterministic rules, and publish reviewable results in tests and CI.</p>
         <div class="actions">
-          <a class="button primary" href="#quickstart">Use version 0.1.0</a>
+          <a class="button primary" href="#quickstart">Use public beta 0.1.0</a>
           <a class="button" href="api/">Browse Javadocs</a>
           <a class="button" href="https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0">Maven Central</a>
           <a class="button" href="https://github.com/TristanKruse/ArchUnitJava-TestRepo-RAG">Open test repository</a>
         </div>
       </div>
       <aside class="status-card" aria-label="Release status">
-        <div class="status-line"><span class="dot"></span> Published on Maven Central</div>
+        <img class="status-logo" src="logo-rounded.png" alt="ArchUnitJava AU family logo">
+        <div class="status-line"><span class="dot"></span> Public beta on Maven Central</div>
         <dl>
           <dt>Version</dt><dd>0.1.0</dd>
           <dt>Runtime</dt><dd>JDK 25</dd>
           <dt>Target bytecode</dt><dd>Java 8–25</dd>
-          <dt>Release decision</dt><dd>PUBLISHED</dd>
+          <dt>Release status</dt><dd>PUBLIC BETA</dd>
         </dl>
         <div class="pipeline" aria-label="Analysis pipeline">
           <span>EXTRACT</span><span>PROJECT</span><span>ASSERT</span><span>REPORT</span>
@@ -190,16 +198,19 @@ dependencies {
             <h2>Read at the level you need.</h2>
           </div>
           <ul class="link-list">
+            <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/USER_GUIDE.md">User guide and feature map</a></li>
+            <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/CLI_REFERENCE.md">CLI configuration reference</a></li>
             <li><a href="api/">Generated public API reference</a></li>
             <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/ARCHITECTURE.md">Internal architecture</a></li>
             <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/COMPATIBILITY.md">Compatibility contract</a></li>
             <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/THREAT_MODEL.md">Threat model</a></li>
             <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/MIGRATION.md">Adoption and migration</a></li>
             <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/RELEASE.md">Release readiness evidence</a></li>
+            <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/SUPPORT.md">Support and reporting</a></li>
           </ul>
         </div>
         <aside class="callout">
-          <strong>Honest status: version 0.1.0 is published; the pre-1.0 API is provisional.</strong>
+          <strong>Honest status: version 0.1.0 is a published public beta; the pre-1.0 API is provisional.</strong>
           <p>Baseline ingestion, <code>package-info.class</code>, regex safety, CSV hardening, and
             Central bundle configuration passed the release gate. The signed release was validated
             and published through the protected user-managed workflow, and the independent RAG
@@ -222,13 +233,14 @@ dependencies {
         <a class="button" href="https://github.com/LukasNiessen/ArchUnitRuby">ArchUnitRuby</a>
         <a class="button" href="https://github.com/LukasNiessen/ArchUnitPython">ArchUnitPython</a>
         <a class="button" href="https://github.com/LukasNiessen/ArchUnitTS">ArchUnitTS</a>
+        <a class="button" href="https://github.com/TristanKruse/ArchUnitJava/discussions">Community support</a>
         <a class="button primary" href="https://github.com/TristanKruse/ArchUnitJava/issues">Issues and roadmap</a>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <span>ArchUnitJava · Apache License 2.0</span>
+    <span>ArchUnitJava public beta · Apache License 2.0</span>
     <span>Independent implementation in the ArchUnitEverything family. Not affiliated with ArchUnit.</span>
   </footer>
 </body>

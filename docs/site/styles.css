@@ -80,16 +80,13 @@ a:hover { color: white; }
 }
 
 .brand-mark {
-  display: grid;
+  display: block;
   width: 2rem;
   height: 2rem;
-  place-items: center;
-  border: 1px solid rgba(139, 124, 255, .55);
+  border: 1px solid rgba(255, 255, 255, .25);
   border-radius: .55rem;
-  background: linear-gradient(145deg, rgba(139, 124, 255, .3), rgba(80, 215, 176, .14));
-  color: white;
-  font-size: .78rem;
-  letter-spacing: -.04em;
+  background: white;
+  object-fit: cover;
 }
 
 .nav-links {
@@ -188,6 +185,14 @@ h1 {
 }
 
 .status-card { padding: 1.5rem; }
+
+.status-logo {
+  display: block;
+  width: 5rem;
+  height: 5rem;
+  margin-bottom: 1.25rem;
+  border-radius: 1rem;
+}
 
 .status-line {
   display: flex;

@@ -2,7 +2,7 @@
 
 <div align="center" name="top">
 
-  <img src="docs/site/favicon.svg" width="150" height="150" alt="ArchUnitJava logo">
+  <img src="assets/logo-rounded.png" width="150" height="150" alt="ArchUnitJava AU family logo">
 
 <!-- spacer -->
 <p></p>
@@ -12,7 +12,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Java 25](https://img.shields.io/badge/Java-25-E76F00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/25/)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.tristankruse/archunitjava.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0)
-[![Status: released](https://img.shields.io/badge/status-released-2da44e)](docs/RELEASE.md)
+[![Status: public beta](https://img.shields.io/badge/status-public%20beta-f89820)](docs/RELEASE.md)
 [![GitHub stars](https://img.shields.io/github/stars/TristanKruse/ArchUnitJava.svg)](https://github.com/TristanKruse/ArchUnitJava)
 
 </div>
@@ -21,10 +21,11 @@ Enforce architecture boundaries against compiled Java code. ArchUnitJava reads c
 and JARs without loading target classes, builds an immutable dependency model, evaluates
 deterministic policies, and produces evidence for JUnit and CI.
 
-> **Release status:** `io.github.tristankruse:archunitjava:0.1.0` is published on
+> **Public beta:** `io.github.tristankruse:archunitjava:0.1.0` is published on
 > [Maven Central](https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0).
 > Its signed tag, Central validation, checksums, signatures, and publication record are documented
-> in the [release assessment](docs/RELEASE.md).
+> in the [release assessment](docs/RELEASE.md). The pre-1.0 API remains provisional and may change
+> between minor versions.
 
 _Inspired by the established [ArchUnit](https://www.archunit.org/) project, but independently
 implemented and not affiliated with ArchUnit. This is not a drop-in replacement._
@@ -32,9 +33,10 @@ implemented and not affiliated with ArchUnit. This is not a drop-in replacement.
 [Quickstart](#-five-minute-quickstart) · [Use cases](#-use-cases) ·
 [Capabilities](#-capabilities) · [Reports](#-reports) ·
 [Example repository](#-independent-example-repository) ·
+[User guide](docs/USER_GUIDE.md) · [CLI reference](docs/CLI_REFERENCE.md) ·
 [Documentation](https://tristankruse.github.io/ArchUnitJava/) ·
 [FAQ](#-faq) · [Contributing](CONTRIBUTING.md) ·
-[Limitations](#-current-limitations)
+[Support](SUPPORT.md) · [Limitations](#-current-limitations)
 
 ## ⚡ Five-minute quickstart
 
@@ -217,8 +219,10 @@ analysis failure (`4`), and policy violations (`5`).
 | Operational controls | Bounded diagnostics, import filters, `.archignore`, cache keys, resource and path limits |
 
 The [generated API reference](https://tristankruse.github.io/ArchUnitJava/api/) lists every public
-package and type. The architecture and ownership rules are described in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+package and type. The [user guide](docs/USER_GUIDE.md) maps every important feature area to its
+normal workflow and API entry point; the [CLI reference](docs/CLI_REFERENCE.md) documents every
+configuration key, command, format, and exit code. The internal architecture and ownership rules
+are described in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## 📊 Reports
 
@@ -336,6 +340,8 @@ CI runs the full suite on Ubuntu and Windows with JDK 25. Separate jobs verify:
 
 Useful technical guides:
 
+- [User guide and feature map](docs/USER_GUIDE.md)
+- [CLI configuration reference](docs/CLI_REFERENCE.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility](docs/COMPATIBILITY.md)
 - [Migration and staged adoption](docs/MIGRATION.md)
@@ -360,7 +366,7 @@ public issue. The supported scope and reporting guidance are in [SECURITY.md](SE
 The original [ArchUnit](https://www.archunit.org/) is mature, widely used, and is generally the
 correct choice for production Java architecture testing today.
 
-ArchUnitJava exists to explore a consistent ArchUnitEverything product family, a
+ArchUnitJava is a public beta that exists to explore a consistent ArchUnitEverything product family, a
 bytecode-as-untrusted-data security boundary, explicit completeness, deterministic evidence, and
 cross-language architecture-policy concepts. Evaluate this release when those goals are relevant
 and you are comfortable with a provisional pre-1.0 API. Do not migrate a production system on the
@@ -368,7 +374,7 @@ assumption of ArchUnit compatibility.
 
 ## 📅 Current limitations
 
-- Version `0.1.0` is published, but the API remains provisional before 1.0.
+- Version `0.1.0` is a public beta; the API remains provisional before 1.0.
 - The CLI intentionally exposes only a subset of the lower-level Java rule surface.
 - JDK 25 is currently required at runtime because the importer uses `java.lang.classfile`.
 - Dynamic runtime dependencies are invisible to static bytecode analysis.
@@ -410,9 +416,14 @@ a stricter bytecode-as-untrusted-data boundary.
 
 ArchUnitJava is maintained by [TristanKruse](https://github.com/TristanKruse). To participate:
 
-- [open an issue](https://github.com/TristanKruse/ArchUnitJava/issues/new/choose) for a bug or feature;
+- read the [support policy](SUPPORT.md) for usage questions and bug reports;
+- join [GitHub Discussions](https://github.com/TristanKruse/ArchUnitJava/discussions) for usage and design questions;
+- [open an issue](https://github.com/TristanKruse/ArchUnitJava/issues/new/choose) for a reproducible bug or feature;
 - [review existing issues](https://github.com/TristanKruse/ArchUnitJava/issues); or
 - contribute code or documentation through a pull request.
+
+Participation is governed by the [code of conduct](CODE_OF_CONDUCT.md). Report vulnerabilities
+privately as described in [SECURITY.md](SECURITY.md).
 
 ## 🌍 ArchUnitEverything family
 

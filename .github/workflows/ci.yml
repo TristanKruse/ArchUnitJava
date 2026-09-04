@@ -50,17 +50,27 @@ jobs:
           java-version: '25'
           cache: maven
       - name: Install the library candidate
+        id: candidate
         shell: bash
         working-directory: ArchUnitJava
-        run: ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests install
+        run: |
+          candidate_version="$(./mvnw --batch-mode --no-transfer-progress \
+            help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          echo "version=$candidate_version" >>"$GITHUB_OUTPUT"
+          ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests install
       - name: Verify the external consumer
         shell: bash
         working-directory: ArchUnitJava-TestRepo-RAG
-        run: ./mvnw --batch-mode --no-transfer-progress verify
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress \
+            -Darchunitjava.version="${{ steps.candidate.outputs.version }}" verify
 
   release-dry-run:
     needs: verify
     runs-on: ubuntu-latest
+    env:
+      CI_CENTRAL_USERNAME: local-dry-run
+      CI_CENTRAL_PASSWORD: local-dry-run
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
@@ -68,13 +78,16 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+          server-id: central
+          server-username: CI_CENTRAL_USERNAME
+          server-password: CI_CENTRAL_PASSWORD
       - name: Check release documentation
         shell: bash
         run: |
           for file in README.md LICENSE CHANGELOG.md CONTRIBUTING.md SECURITY.md docs/COMPATIBILITY.md docs/MIGRATION.md docs/RELEASE.md docs/THREAT_MODEL.md; do
             test -s "$file"
           done
-          grep -F 'Decision: GO FOR USER-MANAGED STAGING' docs/RELEASE.md
+          grep -F 'Decision: PUBLISHED PUBLIC BETA.' docs/RELEASE.md
       - name: Build release candidate
         shell: bash
         run: ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests verify
@@ -144,18 +157,26 @@ jobs:
       - name: Verify reproducible primary artifact
         shell: bash
         run: |
-          cp target/archunitjava-0.1.0-SNAPSHOT.jar "$RUNNER_TEMP/archunitjava-first.jar"
+          project_version="$(./mvnw --batch-mode --no-transfer-progress \
+            help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          cp "target/archunitjava-$project_version.jar" "$RUNNER_TEMP/archunitjava-first.jar"
           ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests clean verify
-          cmp "$RUNNER_TEMP/archunitjava-first.jar" target/archunitjava-0.1.0-SNAPSHOT.jar
+          cmp "$RUNNER_TEMP/archunitjava-first.jar" "target/archunitjava-$project_version.jar"
       - name: Check package contents
         shell: bash
         run: |
-          test -s target/archunitjava-0.1.0-SNAPSHOT.jar
-          test -s target/archunitjava-0.1.0-SNAPSHOT-sources.jar
-          test -s target/archunitjava-0.1.0-SNAPSHOT-javadoc.jar
-          jar tf target/archunitjava-0.1.0-SNAPSHOT.jar | grep -F 'dev/archunitjava/cli/ArchUnitJavaCli.class'
-          jar tf target/archunitjava-0.1.0-SNAPSHOT.jar | grep -F 'META-INF/services/org.junit.platform.engine.TestEngine'
-          unzip -p target/archunitjava-0.1.0-SNAPSHOT.jar META-INF/MANIFEST.MF | grep -F 'Automatic-Module-Name: dev.archunitjava'
+          project_version="$(./mvnw --batch-mode --no-transfer-progress \
+            help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          jar_path="target/archunitjava-$project_version.jar"
+          test -s "$jar_path"
+          test -s "target/archunitjava-$project_version-sources.jar"
+          test -s "target/archunitjava-$project_version-javadoc.jar"
+          jar tf "$jar_path" | grep -F 'dev/archunitjava/cli/ArchUnitJavaCli.class'
+          jar tf "$jar_path" | grep -F 'META-INF/services/org.junit.platform.engine.TestEngine'
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | grep -F 'Automatic-Module-Name: dev.archunitjava'
+      - name: Assemble and validate GitHub Pages
+        shell: pwsh
+        run: ./scripts/build-pages.ps1
       - name: Verify external Maven consumer
         shell: bash
         run: |
@@ -167,8 +188,10 @@ jobs:
           ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate,release-sign -Dgpg.skip=true -DskipTests \
             "-DaltDeploymentRepository=release-dry-run::file:$RUNNER_TEMP/archunitjava-staging" deploy
           find "$RUNNER_TEMP/archunitjava-staging" -type f -name 'archunitjava-*.jar' | grep .
-      - name: Build a signed Central bundle without uploading it
+      - name: Build a signed Central bundle against an unreachable local endpoint
         shell: bash
+        env:
+          DRY_RUN_VERSION: 0.0.0
         run: |
           gpg --batch --pinentry-mode loopback --passphrase '' \
             --quick-generate-key 'ArchUnitJava CI <ci@archunitjava.invalid>' rsa2048 sign 1d
@@ -178,15 +201,20 @@ jobs:
           test -n "$MAVEN_GPG_KEY_FINGERPRINT"
           ./mvnw --batch-mode --no-transfer-progress \
             org.codehaus.mojo:versions-maven-plugin:2.19.1:set \
-            -DgenerateBackupPoms=false -DnewVersion=0.1.0
+            -DgenerateBackupPoms=false -DnewVersion="$DRY_RUN_VERSION"
+          set +e
           ./mvnw --batch-mode --no-transfer-progress \
             -Prelease-candidate,release-sign,central-release \
-            -Dcentral.skipPublishing=true -Dgpg.keyname="$MAVEN_GPG_KEY_FINGERPRINT" \
+            -DcentralBaseUrl=http://127.0.0.1:9 \
+            -Dgpg.keyname="$MAVEN_GPG_KEY_FINGERPRINT" \
             -DskipTests deploy
+          deploy_status=$?
+          set -e
+          test "$deploy_status" -ne 0
           bundle=target/central-publishing/central-bundle.zip
           test -s "$bundle"
-          unzip -l "$bundle" | grep -F 'archunitjava-0.1.0.jar'
-          unzip -l "$bundle" | grep -F 'archunitjava-0.1.0-sources.jar'
-          unzip -l "$bundle" | grep -F 'archunitjava-0.1.0-javadoc.jar'
-          unzip -l "$bundle" | grep -F 'archunitjava-0.1.0.pom'
-          unzip -l "$bundle" | grep -F 'archunitjava-0.1.0.jar.asc'
+          unzip -l "$bundle" | grep -F "archunitjava-$DRY_RUN_VERSION.jar"
+          unzip -l "$bundle" | grep -F "archunitjava-$DRY_RUN_VERSION-sources.jar"
+          unzip -l "$bundle" | grep -F "archunitjava-$DRY_RUN_VERSION-javadoc.jar"
+          unzip -l "$bundle" | grep -F "archunitjava-$DRY_RUN_VERSION.pom"
+          unzip -l "$bundle" | grep -F "archunitjava-$DRY_RUN_VERSION.jar.asc"

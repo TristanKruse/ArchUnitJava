@@ -25,6 +25,8 @@ New-Item -ItemType Directory -Path (Join-Path $siteRoot 'api') -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'docs\site\index.html') -Destination $siteRoot
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'docs\site\styles.css') -Destination $siteRoot
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'docs\site\favicon.svg') -Destination $siteRoot
+Copy-Item -LiteralPath (Join-Path $repositoryRoot 'assets\logo-rounded.png') -Destination $siteRoot
+Copy-Item -LiteralPath (Join-Path $repositoryRoot 'assets\social-preview.png') -Destination $siteRoot
 Copy-Item -Path (Join-Path $apiSource '*') -Destination (Join-Path $siteRoot 'api') -Recurse
 New-Item -ItemType File -Path (Join-Path $siteRoot '.nojekyll') -Force | Out-Null
 

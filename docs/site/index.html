@@ -3,19 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="ArchUnitJava — static architecture analysis and executable architecture policies for compiled Java code.">
+  <meta name="description" content="ArchUnitJava public beta — static architecture analysis and executable architecture policies for compiled Java code.">
+  <meta property="og:title" content="ArchUnitJava — Architecture testing for compiled Java">
+  <meta property="og:description" content="A public-beta architecture-testing library with deterministic rules, JUnit integration, and evidence-rich reports.">
+  <meta property="og:image" content="https://tristankruse.github.io/ArchUnitJava/social-preview.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
   <title>ArchUnitJava — Architecture rules for compiled Java</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="logo-rounded.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <nav class="nav" aria-label="Primary navigation">
     <div class="nav-inner">
-      <a class="brand" href="#top"><span class="brand-mark">AJ</span> ArchUnitJava</a>
+      <a class="brand" href="#top"><img class="brand-mark" src="logo-rounded.png" alt=""> ArchUnitJava</a>
       <div class="nav-links">
         <a href="#quickstart">Quickstart</a>
+        <a href="#use-cases">Use cases</a>
         <a href="#capabilities">Capabilities</a>
+        <a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/USER_GUIDE.md">User guide</a>
         <a href="#evidence">Evidence</a>
         <a href="api/">API reference</a>
         <a href="https://github.com/TristanKruse/ArchUnitJava">GitHub</a>
@@ -31,18 +39,20 @@
         <p class="lede">Import compiled classes without loading them, model their real dependency
           graph, evaluate deterministic rules, and publish reviewable results in tests and CI.</p>
         <div class="actions">
-          <a class="button primary" href="#quickstart">Try the release candidate</a>
+          <a class="button primary" href="#quickstart">Use public beta 0.1.0</a>
           <a class="button" href="api/">Browse Javadocs</a>
+          <a class="button" href="https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0">Maven Central</a>
           <a class="button" href="https://github.com/TristanKruse/ArchUnitJava-TestRepo-RAG">Open test repository</a>
         </div>
       </div>
       <aside class="status-card" aria-label="Release status">
-        <div class="status-line"><span class="dot"></span> Ready for staging</div>
+        <img class="status-logo" src="logo-rounded.png" alt="ArchUnitJava AU family logo">
+        <div class="status-line"><span class="dot"></span> Public beta on Maven Central</div>
         <dl>
-          <dt>Version</dt><dd>0.1.0-SNAPSHOT</dd>
+          <dt>Version</dt><dd>0.1.0</dd>
           <dt>Runtime</dt><dd>JDK 25</dd>
           <dt>Target bytecode</dt><dd>Java 8–25</dd>
-          <dt>Release decision</dt><dd>GO TO STAGING</dd>
+          <dt>Release status</dt><dd>PUBLIC BETA</dd>
         </dl>
         <div class="pipeline" aria-label="Analysis pipeline">
           <span>EXTRACT</span><span>PROJECT</span><span>ASSERT</span><span>REPORT</span>
@@ -63,26 +73,29 @@
       <div class="section-header">
         <p class="eyebrow">Five-minute quickstart</p>
         <h2>Analyze a normal Maven project.</h2>
-        <p>The candidate is not published yet. Install it locally, add it as a test dependency,
-          and point a bounded policy file at compiled classes.</p>
+        <p>Add the published release as a test dependency and point a bounded policy file at
+          compiled classes.</p>
+        <p><strong>Maven Central</strong> is the public registry; <strong>Central Portal</strong> is
+          its publisher interface. Maven and Gradle consumers resolve version 0.1.0 from Central
+          without needing a Portal account.</p>
       </div>
       <div class="grid-2">
         <div class="code-card">
-          <div class="code-title"><span>Terminal</span><span>candidate install</span></div>
-          <pre><code><span class="accent">git</span> clone https://github.com/TristanKruse/ArchUnitJava.git
-<span class="accent">cd</span> ArchUnitJava
-./mvnw -Prelease-candidate install
+          <div class="code-title"><span>build.gradle.kts</span><span>test dependency</span></div>
+          <pre><code>repositories {
+    <span class="accent">mavenCentral()</span>
+}
 
-<span class="accent"># Verify the independent RAG consumer</span>
-<span class="accent">cd</span> ../ArchUnitJava-TestRepo-RAG
-./mvnw verify</code></pre>
+dependencies {
+    testImplementation(<span class="property">"io.github.tristankruse:archunitjava:0.1.0"</span>)
+}</code></pre>
         </div>
         <div class="code-card">
           <div class="code-title"><span>pom.xml</span><span>test dependency</span></div>
           <pre><code>&lt;dependency&gt;
   &lt;groupId&gt;<span class="property">io.github.tristankruse</span>&lt;/groupId&gt;
   &lt;artifactId&gt;<span class="property">archunitjava</span>&lt;/artifactId&gt;
-  &lt;version&gt;<span class="property">0.1.0-SNAPSHOT</span>&lt;/version&gt;
+  &lt;version&gt;<span class="property">0.1.0</span>&lt;/version&gt;
   &lt;scope&gt;test&lt;/scope&gt;
 &lt;/dependency&gt;</code></pre>
         </div>
@@ -119,6 +132,18 @@
 <span class="property">rule.api-boundary.external</span>=ignore
 <span class="property">rule.api-boundary.rationale</span>=Keep adapters behind application ports</code></pre>
         </div>
+      </div>
+    </section>
+
+    <section class="section" id="use-cases" aria-label="Common use cases">
+      <div class="section-header">
+        <p class="eyebrow">Use cases</p>
+        <h2>Make architecture drift fail like any other test.</h2>
+      </div>
+      <div class="grid-3">
+        <article class="card"><h3>Dependency boundaries</h3><p>Keep domain code independent, adapters behind ports, and APIs away from persistence details.</p></article>
+        <article class="card"><h3>Cycles and coupling</h3><p>Detect cycles across types, packages, slices, layers, and modules with concrete bytecode evidence.</p></article>
+        <article class="card"><h3>CI evidence</h3><p>Run policies in JUnit or the CLI and export stable JSON, SARIF, JUnit XML, and graph reports.</p></article>
       </div>
     </section>
 
@@ -173,29 +198,49 @@
             <h2>Read at the level you need.</h2>
           </div>
           <ul class="link-list">
+            <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/USER_GUIDE.md">User guide and feature map</a></li>
+            <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/CLI_REFERENCE.md">CLI configuration reference</a></li>
             <li><a href="api/">Generated public API reference</a></li>
             <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/ARCHITECTURE.md">Internal architecture</a></li>
             <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/COMPATIBILITY.md">Compatibility contract</a></li>
             <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/THREAT_MODEL.md">Threat model</a></li>
             <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/MIGRATION.md">Adoption and migration</a></li>
             <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/RELEASE.md">Release readiness evidence</a></li>
+            <li><a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/SUPPORT.md">Support and reporting</a></li>
           </ul>
         </div>
         <aside class="callout">
-          <strong>Honest status: code-ready, not yet published.</strong>
+          <strong>Honest status: version 0.1.0 is a published public beta; the pre-1.0 API is provisional.</strong>
           <p>Baseline ingestion, <code>package-info.class</code>, regex safety, CSV hardening, and
-            Central bundle configuration have passed the source-level release gate. Publisher
-            namespace, signing key, and Central credentials remain external prerequisites.</p>
+            Central bundle configuration passed the release gate. The signed release was validated
+            and published through the protected user-managed workflow, and the independent RAG
+            repository resolves it from Maven Central.</p>
           <p>Static analysis also cannot observe dependencies introduced only through reflection,
             native code, runtime generation, or dynamically assembled strings.</p>
           <a href="https://github.com/TristanKruse/ArchUnitJava/blob/main/docs/RELEASE.md">Read the complete decision record →</a>
         </aside>
       </div>
     </section>
+
+    <section class="section" id="community">
+      <div class="section-header">
+        <p class="eyebrow">ArchUnitEverything family</p>
+        <h2>One product idea, native language workflows.</h2>
+        <p>ArchUnitJava shares the goal and information structure of its Ruby, Python, and
+          TypeScript siblings while using Java-native Maven, Gradle, JUnit, and Javadocs tooling.</p>
+      </div>
+      <div class="actions">
+        <a class="button" href="https://github.com/LukasNiessen/ArchUnitRuby">ArchUnitRuby</a>
+        <a class="button" href="https://github.com/LukasNiessen/ArchUnitPython">ArchUnitPython</a>
+        <a class="button" href="https://github.com/LukasNiessen/ArchUnitTS">ArchUnitTS</a>
+        <a class="button" href="https://github.com/TristanKruse/ArchUnitJava/discussions">Community support</a>
+        <a class="button primary" href="https://github.com/TristanKruse/ArchUnitJava/issues">Issues and roadmap</a>
+      </div>
+    </section>
   </main>
 
   <footer class="footer">
-    <span>ArchUnitJava · Apache License 2.0</span>
+    <span>Development version: MIT · published 0.1.0: Apache-2.0</span>
     <span>Independent implementation in the ArchUnitEverything family. Not affiliated with ArchUnit.</span>
   </footer>
 </body>

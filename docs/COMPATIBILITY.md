@@ -2,7 +2,7 @@
 
 ## Runtime and build JDK
 
-The `0.1.0-SNAPSHOT` candidate requires JDK 25. The implementation uses the final
+The published `0.1.0` release requires JDK 25. The implementation uses the final
 `java.lang.classfile` API and the Maven build enforces `[25,26)`. Java 17 or 21 runtime support would
 require a different bytecode backend or a multi-release implementation and is not claimed.
 
@@ -38,7 +38,7 @@ own schema versions and reject unknown schemas where ingestion exists.
 
 ## Decision
 
-The first candidate retains JDK 25 instead of adding a third-party parser solely to lower the
+The `0.1.x` line retains JDK 25 instead of adding a third-party parser solely to lower the
 runtime floor. That keeps the dependency surface small and the extraction behavior anchored to the
 JDK API. The decision should be reconsidered only with usage data and a separately tested backend;
 it is not a promise that a future 1.0 will require JDK 25.

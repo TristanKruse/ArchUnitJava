@@ -5,6 +5,10 @@ uses semantic versioning for public releases.
 
 ## [Unreleased]
 
+### Changed
+
+- align the project license with the ArchUnitEverything family by adopting the MIT License.
+
 ### Documentation
 
 - identify the published line consistently as a public beta;

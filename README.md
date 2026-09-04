@@ -9,7 +9,7 @@
 
 [![CI](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/ci.yml/badge.svg)](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/ci.yml)
 [![Documentation](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/docs.yml/badge.svg)](https://tristankruse.github.io/ArchUnitJava/)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Java 25](https://img.shields.io/badge/Java-25-E76F00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/25/)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.tristankruse/archunitjava.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0)
 [![Status: public beta](https://img.shields.io/badge/status-public%20beta-f89820)](docs/RELEASE.md)
@@ -437,7 +437,7 @@ workflow.
 
 ## 📄 License
 
-ArchUnitJava is licensed under the [Apache License 2.0](LICENSE).
+ArchUnitJava is licensed under the [MIT License](LICENSE).
 
 <div align="right">
 

@@ -86,7 +86,7 @@ jobs:
             -Dgpg.keyname="$MAVEN_GPG_KEY_FINGERPRINT" deploy
       - name: Retain the submitted bundle for review
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: archunitjava-${{ inputs.version }}-central-bundle
           path: target/central-publishing/*.zip

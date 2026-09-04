@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Semantic version already represented by the selected v-prefixed tag
+        description: Semantic version represented by an existing signed v-prefixed tag
         required: true
         type: string
       confirm:
@@ -26,16 +26,21 @@ jobs:
     environment: maven-central
     timeout-minutes: 30
     steps:
-      - name: Check out the selected release tag
+      - name: Check out the signed release tag
         uses: actions/checkout@v7
+        with:
+          ref: v${{ inputs.version }}
+          fetch-depth: 0
       - name: Validate immutable tag and version
         shell: bash
         env:
           VERSION: ${{ inputs.version }}
         run: |
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          test "$GITHUB_REF_TYPE" = "tag"
-          test "$GITHUB_REF_NAME" = "v$VERSION"
+          test "$GITHUB_REF_TYPE" = "branch"
+          test "$GITHUB_REF_NAME" = "main"
+          test "$(git cat-file -t "refs/tags/v$VERSION")" = "tag"
+          test "$(git describe --tags --exact-match HEAD)" = "v$VERSION"
       - name: Set up Java, Central credentials, and signing key
         uses: actions/setup-java@v5
         env:
@@ -47,10 +52,15 @@ jobs:
           java-version: '25'
           cache: maven
           server-id: central
-          server-username-env-var: MAVEN_CENTRAL_USERNAME
-          server-password-env-var: MAVEN_CENTRAL_PASSWORD
+          server-username: MAVEN_CENTRAL_USERNAME
+          server-password: MAVEN_CENTRAL_PASSWORD
           gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-          gpg-passphrase-env-var: MAVEN_GPG_PASSPHRASE
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Verify release tag signature
+        shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+        run: git verify-tag "v$VERSION"
       - name: Materialize the non-snapshot release version
         shell: bash
         env:

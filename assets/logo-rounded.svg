@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">ArchUnitJava logo</title>
+  <desc id="description">A rounded white tile with the ArchUnit AU monogram in Java orange and blue.</desc>
+  <defs>
+    <linearGradient id="java-orange" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#f89820"/>
+      <stop offset="1" stop-color="#d95f02"/>
+    </linearGradient>
+    <linearGradient id="java-blue" x1="0" y1="0" x2="0.65" y2="1">
+      <stop offset="0" stop-color="#6f9cb8"/>
+      <stop offset="1" stop-color="#356f9f"/>
+    </linearGradient>
+    <filter id="tile-shadow" x="-12%" y="-12%" width="124%" height="124%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#102033" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <rect x="24" y="24" width="976" height="976" rx="138" fill="#ffffff" filter="url(#tile-shadow)"/>
+  <path fill="url(#java-orange)" d="M84 755 264 251h94l120 311 125-311h39L442 755h-43l-43-113H226l-44 113Zm167-216h106l-45-194Z"/>
+  <path fill="url(#java-blue)" d="M542 329 634 251v286c0 85 34 127 103 127 70 0 105-42 105-127V251h90v299c0 140-65 211-195 211-130 0-195-71-195-211Z"/>
+</svg>

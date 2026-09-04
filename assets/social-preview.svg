@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" role="img" aria-labelledby="title description">
+  <title id="title">ArchUnitJava social preview</title>
+  <desc id="description">ArchUnitJava public beta, architecture testing for compiled Java.</desc>
+  <defs>
+    <radialGradient id="background" cx="0.78" cy="0.02" r="1">
+      <stop offset="0" stop-color="#203c5d"/>
+      <stop offset="0.48" stop-color="#111c2d"/>
+      <stop offset="1" stop-color="#080d17"/>
+    </radialGradient>
+    <linearGradient id="java-orange" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#f89820"/>
+      <stop offset="1" stop-color="#d95f02"/>
+    </linearGradient>
+    <linearGradient id="java-blue" x1="0" y1="0" x2="0.65" y2="1">
+      <stop offset="0" stop-color="#6f9cb8"/>
+      <stop offset="1" stop-color="#356f9f"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="20" stdDeviation="26" flood-color="#000000" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="640" fill="url(#background)"/>
+  <circle cx="1120" cy="90" r="280" fill="#f89820" opacity="0.06"/>
+  <circle cx="90" cy="610" r="290" fill="#5f94b8" opacity="0.08"/>
+  <g transform="translate(76 116) scale(.3984375)" filter="url(#shadow)">
+    <rect x="24" y="24" width="976" height="976" rx="138" fill="#ffffff"/>
+    <path fill="url(#java-orange)" d="M84 755 264 251h94l120 311 125-311h39L442 755h-43l-43-113H226l-44 113Zm167-216h106l-45-194Z"/>
+    <path fill="url(#java-blue)" d="M542 329 634 251v286c0 85 34 127 103 127 70 0 105-42 105-127V251h90v299c0 140-65 211-195 211-130 0-195-71-195-211Z"/>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="535" y="205" fill="#f89820" font-size="25" font-weight="700" letter-spacing="4">PUBLIC BETA</text>
+    <text x="535" y="292" fill="#f7f9fc" font-size="70" font-weight="750" letter-spacing="-3">ArchUnitJava</text>
+    <text x="535" y="350" fill="#c8d1e0" font-size="30">Architecture testing for compiled Java</text>
+    <text x="535" y="410" fill="#9fadc2" font-size="22">EXTRACT  →  PROJECT  →  ASSERT  →  REPORT</text>
+    <rect x="535" y="455" width="440" height="55" rx="27.5" fill="#18283d" stroke="#35506f"/>
+    <text x="563" y="491" fill="#e7edf5" font-size="21">io.github.tristankruse:archunitjava:0.1.0</text>
+    <text x="535" y="554" fill="#7fb0cf" font-size="20">The Java member of ArchUnitEverything</text>
+  </g>
+</svg>

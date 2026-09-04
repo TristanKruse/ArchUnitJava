@@ -1,5 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#101827"/>
-  <path d="M15 46 27 16h10l12 30h-9l-2-6H26l-2 6Zm14-14h6l-3-9Z" fill="#8b7cff"/>
-  <path d="M43 16h7v20c0 8-4 12-12 12v-7c3 0 5-2 5-5Z" fill="#50d7b0"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ArchUnitJava logo">
+  <rect x="1.5" y="1.5" width="61" height="61" rx="10" fill="#fff" stroke="#d9e0e8"/>
+  <g transform="scale(.0625)">
+    <path fill="#e76f00" d="M84 755 264 251h94l120 311 125-311h39L442 755h-43l-43-113H226l-44 113Zm167-216h106l-45-194Z"/>
+    <path fill="#4d86aa" d="M542 329 634 251v286c0 85 34 127 103 127 70 0 105-42 105-127V251h90v299c0 140-65 211-195 211-130 0-195-71-195-211Z"/>
+  </g>
 </svg>

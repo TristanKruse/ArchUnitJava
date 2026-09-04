@@ -7,7 +7,7 @@
 <!-- spacer -->
 <p></p>
 
-[![CI](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/ci.yml/badge.svg)](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/ci.yml)
+[![CI](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/ci.yml?query=branch%3Amain)
 [![Documentation](https://github.com/TristanKruse/ArchUnitJava/actions/workflows/docs.yml/badge.svg)](https://tristankruse.github.io/ArchUnitJava/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Java 25](https://img.shields.io/badge/Java-25-E76F00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/25/)

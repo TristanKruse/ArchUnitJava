@@ -42,7 +42,7 @@ jobs:
           test "$(git cat-file -t "refs/tags/v$VERSION")" = "tag"
           test "$(git describe --tags --exact-match HEAD)" = "v$VERSION"
       - name: Set up Java, Central credentials, and signing key
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}

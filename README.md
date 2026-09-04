@@ -437,7 +437,9 @@ workflow.
 
 ## 📄 License
 
-ArchUnitJava is licensed under the [MIT License](LICENSE).
+The current development version is licensed under the [MIT License](LICENSE). The published
+[`0.1.0` release](https://github.com/TristanKruse/ArchUnitJava/blob/v0.1.0/LICENSE) remains under
+the Apache License 2.0; released artifacts keep the license under which they were published.
 
 <div align="right">
 

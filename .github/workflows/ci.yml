@@ -87,7 +87,7 @@ jobs:
           for file in README.md LICENSE CHANGELOG.md CONTRIBUTING.md SECURITY.md docs/COMPATIBILITY.md docs/MIGRATION.md docs/RELEASE.md docs/THREAT_MODEL.md; do
             test -s "$file"
           done
-          grep -F 'Decision: PUBLISHED.' docs/RELEASE.md
+          grep -F 'Decision: PUBLISHED PUBLIC BETA.' docs/RELEASE.md
       - name: Build release candidate
         shell: bash
         run: ./mvnw --batch-mode --no-transfer-progress -Prelease-candidate -DskipTests verify

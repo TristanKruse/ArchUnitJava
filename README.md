@@ -36,7 +36,8 @@ implemented and not affiliated with ArchUnit. This is not a drop-in replacement.
 [User guide](docs/USER_GUIDE.md) · [CLI reference](docs/CLI_REFERENCE.md) ·
 [Documentation](https://tristankruse.github.io/ArchUnitJava/) ·
 [FAQ](#-faq) · [Contributing](CONTRIBUTING.md) ·
-[Support](SUPPORT.md) · [Limitations](#-current-limitations)
+[Support](SUPPORT.md) · [Limitations](#-current-limitations) ·
+[Adoption metrics](#-adoption-metrics)
 
 ## ⚡ Five-minute quickstart
 
@@ -383,6 +384,20 @@ assumption of ArchUnit compatibility.
 
 These limitations are tracked in the [release assessment](docs/RELEASE.md) rather than hidden behind
 a stability claim.
+
+## 📈 Adoption metrics
+
+[Maven Central Publisher Insights](https://central.sonatype.com/publishing/insights) is enabled for
+the `io.github.tristankruse` namespace. It tracks rolling three-month download totals, distinct
+sources, and identified companies. The linked
+[Scarf integration](https://docs.scarf.sh/package-registry-integrations-maven-central/) adds
+per-package, version, date, geography, and adoption breakdowns after Maven package discovery.
+
+Initial Scarf discovery can take a few days, and new Maven Central activity normally appears about
+one week later. Counts represent artifact fetches rather than unique users: repeated builds, CI,
+repository mirrors, and dependency-cache misses can all contribute. Repository views, clones, and
+stars remain separate GitHub metrics. ArchUnitJava does not add runtime telemetry to applications
+or analyzed code.
 
 ## ℹ️ FAQ
 
